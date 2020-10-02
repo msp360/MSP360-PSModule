@@ -1,13 +1,13 @@
 # <img src="https://www.msp360.com/new/img/logos/cbl/CloudBerry-Lab-is-now-MSP360-light-bg-117-40.png" alt="drawing" width="117"/> MSP360 (CloudBerry) PowerShell module
 
-First step before using our Powershell Module is installing it in your system. Below you can find instructions for doing so.  
+The first step before using our Powershell Module is installing it in your system. Below you can find instructions for doing so.  
 
 > **_NOTE:_** You can find the current version of your Powershell by running this command:<br />
 > **Get-Host | Select version**
 
 ## For Powershell version 3.0 - 5.1 and above: 
 
-Open PS console with Administrator account and run this command.
+Open PS console with an Administrator account and run this command.
 ```powershell
 iex (New-Object System.Net.WebClient).DownloadString('https://git.io/JUSAA')
 ```
@@ -19,7 +19,7 @@ For Powershell with version below we suggest [updating](https://docs.microsoft.c
 ## Additional steps
 
 
-At some step you also may be required to allow remotesigned execution policy by running 
+At some step, you also may be required to allow "remotesigned" execution policy by running the following command.
 
 ```powershell
 Set-ExecutionPolicy RemoteSigned
@@ -33,7 +33,7 @@ Import-Module -Name msp360
 
 ## Examples
 
-Here is an example of a couple popular requests to start working with our PowerShell module:
+Here is an example of a couple of popular requests to start working with our PowerShell module:
 
 ```powershell
 Get-Command -Module msp360
