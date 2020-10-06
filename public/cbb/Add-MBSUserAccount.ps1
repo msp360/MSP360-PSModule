@@ -92,7 +92,7 @@ function Add-MBSUserAccount {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -115,27 +115,16 @@ function Add-MBSUserAccount {
             }
             if ($WindowsAuthDirectMode){$Argument += " -winauthD"}
             if ($ADBridgeEndpoint){$Argument += " -adep $ADBridgeEndpoint"}
-            if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
                 
             return $Argument
         }
 
-        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-            $Arguments = 'addaccount -output full'
-        }else{
-            $Arguments = 'addaccount -output short'
-        }
+        $Arguments = 'addaccount'
         $Arguments += Set-Argument
-        $Result = (Start-MBSProcess -CMDPath (Get-MBSAgent).CBBCLIPath -CMDArguments $Arguments -Output json).stdout.replace("Content-Type: application/json; charset=UTF-8","") | ConvertFrom-Json
+
+        $Result = Start-MBSProcess -CMDPath (Get-MBSAgent).CBBCLIPath -CMDArguments $Arguments -Output json -MasterPassword $MasterPassword
         if ($Result.Result -eq "Success") {
             #$Result.Messages | Out-String -stream | Write-Output
-        } else {
-            if ('' -ne $Result.Warnings) {
-                Write-Warning -Message $Result.Warnings[0]
-            } 
-            if ('' -ne $Result.Errors) {
-                Write-Error -Message $Result.Errors[0] 
-            }
         }
     }
     

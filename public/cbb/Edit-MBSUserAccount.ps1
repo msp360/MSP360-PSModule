@@ -96,7 +96,7 @@ function Edit-MBSUserAccount {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -119,34 +119,14 @@ function Edit-MBSUserAccount {
             }
             if ($WindowsAuthDirectMode){$Argument += " -winauthD"}
             if ($ADBridgeEndpoint){$Argument += " -adep $ADBridgeEndpoint"}
-            if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
                 
             return $Argument
         }
 
-        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-            $Arguments = 'editaccount -output full'
-        }else{
-            $Arguments = 'editaccount -output short'
-        }
+        $Arguments = 'editaccount'
         $Arguments += Set-Argument
-        $Result = (Start-MBSProcess -CMDPath (Get-MBSAgent).CBBCLIPath -CMDArguments $Arguments -Output short)
-        $result.stdout.split([Environment]::NewLine) | ForEach-Object -Process {
-            if($_ -match 'ERROR: \w*'){
-                if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                    $ReturnArray += $_
-                }else{
-                    Write-Error $_
-                }
-            }elseif ($_ -match 'WARNING: \w*') {
-                if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                    $ReturnArray += $_
-                }else{
-                    Write-Warning $_ 
-                }
-            }
-        }
-        return $ReturnArray
+
+        $Result = Start-MBSProcess -CMDPath CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword
     }
     
     end {

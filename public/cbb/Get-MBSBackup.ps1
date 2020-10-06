@@ -79,7 +79,7 @@ function Get-MBSBackup {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -91,10 +91,9 @@ function Get-MBSBackup {
     process {
         $Arguments = " list"
         $Arguments += " -a ""$($StorageAccount.DisplayName)"""
-        if ($MasterPassword){$Arguments += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
         if ($File){$Arguments += " -f "+'"{0}"' -f ($File -join '" -f "')}
         if ($Folder){$Arguments += " -d "+'"{0}"' -f ($Folder -join '" -d "')}
-        $Result = (Start-MBSProcess -CMDPath (Get-MBSAgent).CBBCLIPath -CMDArguments $Arguments -Output json).stdout.replace("Content-Type: application/json; charset=UTF-8","") | ConvertFrom-Json
+        $Result = Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output json -MasterPassword $MasterPassword
         
         if ($Result.Result -eq "Success") {
             $StorageAccountContent = @()
@@ -140,13 +139,6 @@ function Get-MBSBackup {
 
             return $StorageAccountContent
 
-        } else {
-            if ('' -ne $Result.Warnings) {
-                Write-Warning -Message $Result.Warnings[0]
-            } 
-            if ('' -ne $Result.Errors) {
-                Write-Error -Message $Result.Errors[0] 
-            }
         }
     }
     

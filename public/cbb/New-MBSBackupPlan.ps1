@@ -371,7 +371,7 @@ function New-MBSBackupPlan {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -432,7 +432,6 @@ function New-MBSBackupPlan {
             }else{
                 $Argument += " -aid ""$($StorageAccount.ID)"""
             }
-            if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
 
             if($Schedule){$Argument += Set-Schedule -Schedule $Schedule}
             if($FullSchedule){$Argument += Set-Schedule -Schedule $FullSchedule -Prefix "ForceFull"}
@@ -556,7 +555,7 @@ function New-MBSBackupPlan {
                     if ($useSSL){$Argument += " -secure"}
                     if ($useWinauth){$Argument += " -winauth yes"}
                     if ($UserName){$Argument += " -username $UserName"}
-                    if ($Password){$Argument += " -password """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
+                    if ($Password){$Argument += " -password """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)))+""""}
                     switch ($BackupDB) {
                         'All' {$Argument += " -databases All"}
                         'User' {$Argument += " -databases User"}
@@ -567,12 +566,6 @@ function New-MBSBackupPlan {
                     if ($Verify){$Argument += " -verify yes"}
                 }
                 Default {}
-            } 
-
-            if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                $Argument += ' -output full'
-            }else{
-                $Argument += ' -output short'
             }
 
             Return $Argument
@@ -588,8 +581,7 @@ function New-MBSBackupPlan {
 
         $Arguments += Set-Argument
 
-        Write-Verbose -Message "Arguments: $($Arguments -replace  '-mp "\w*"','-mp "****"')"
-        Start-Process -FilePath $CBB.CBBCLIPath -ArgumentList $Arguments -Wait -NoNewWindow
+        (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword).result
     }
     
     end {

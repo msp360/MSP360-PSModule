@@ -338,7 +338,7 @@ function New-MBSRestorePlan {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword  -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -403,7 +403,6 @@ function New-MBSRestorePlan {
         if ($Name){$Argument += " -n ""$Name"""}
         $Argument += " -aid ""$($StorageAccount.ID)"""
         if($Schedule){$Argument += Set-Schedule -Schedule $Schedule}
-        if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
 
         if($RestorePlanCommonOption.SyncRepositoryBeforeRun){$Argument += " -sync yes"}#else{$Argument += " -sync no"}
         if($RestorePlanCommonOption.EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($RestorePlanCommonOption.EncryptionPassword)))+""""}
@@ -469,7 +468,7 @@ function New-MBSRestorePlan {
                 if ($useSSL){$Argument += " -secure"}
                 if ($useWinauth){$Argument += " -winauth yes"}
                 if ($UserName){$Argument += " -username $UserName"}
-                if ($Password){$Argument += " -password """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
+                if ($Password){$Argument += " -password """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)))+""""}
                 if ($DataFileFolder){$Argument += " -dp $DataFileFolder"}
                 if ($LogFileFolder){$Argument += " -lp $LogFileFolder"}
                 if ($FileNameTemplate){$Argument += " -fm $FileNameTemplate"}
@@ -483,45 +482,20 @@ function New-MBSRestorePlan {
         }
 
         switch  ($PSCmdlet.ParameterSetName){
-            {$_ -in "FileLevel","ImageBasedDisk","ImageBasedVolume","ImageBasedVHD","HyperV"} {
-                $result = (Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Argument -output json).stdout.replace("Content-Type: application/json; charset=UTF-8","") |ConvertFrom-Json
-                if($null -ne $result){
-                    if ($result.Result -eq "Success") {
-                        Get-MBSRestorePlan | Where-Object{$_.ID -eq $Result.Id}
-                    }else{
-                        if ('' -ne $result.Warnings) {
-                            Write-Warning -Message $result.Warnings[0]
-                        } 
-                        if ('' -ne $result.Errors) {
-                            Write-Error -Message $result.Errors[0] 
-                        }
-                    } 
+            {$_ -in "ImageBasedDisk","ImageBasedVolume","ImageBasedVHD","HyperV"} {
+                $result = Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Argument -output json -MasterPassword $MasterPassword
+                if ($result.Result -eq "Success") {
+                    Get-MBSRestorePlan | Where-Object{$_.ID -eq $result.Id}
                 }
             }
-            'MSSQL' {
-                $result = Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Argument -output short
-                $result.stdout.split([Environment]::NewLine) | ForEach-Object -Process {
-                    if($_ -match 'ERROR: \w*'){
-                        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                            $ReturnArray += $_
-                        }else{
-                            Write-Host $_ -ForegroundColor Red
-                        }
-                    }elseif ($_ -match 'WARNING: \w*') {
-                        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                            $ReturnArray += $_
-                        }else{
-                            Write-Host $_ -ForegroundColor DarkYellow
-                        }
-                    }
-                }
-                return $ReturnArray
+            {$_ -in "FileLevel","MSSQL"} {
+                (Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Argument -output short -MasterPassword $MasterPassword).result
             }
             Default {}
         }
     }
     
     end {
-        
+
     }
 }

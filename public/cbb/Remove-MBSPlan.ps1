@@ -60,7 +60,7 @@ function Remove-MBSPlan {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -75,13 +75,8 @@ function Remove-MBSPlan {
         } else {
             $Arguments = "deleteBackupPlan -ID $ID"
         }
-        if ($MasterPassword) {
-            $Arguments += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""
-        }
-        $Arguments += " -output short"
-        Write-Verbose -message "Arguments: $Arguments"
-        Start-Process -FilePath $CBB.CBBCLIPath -ArgumentList $Arguments -Wait -NoNewWindow
 
+        (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword).result
     }
     
     end {

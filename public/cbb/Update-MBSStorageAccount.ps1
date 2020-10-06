@@ -37,8 +37,7 @@ function Update-MBSStorageAccount {
     
     process {        
         $Arguments = "refreshmbsaccounts"
-        Write-Verbose -message "Arguments: $Arguments"
-        $Result = Start-Process -FilePath $CBB.CBBCLIPath -ArgumentList $Arguments -Wait -NoNewWindow
+        $Result = Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output none
     }
     
     end {

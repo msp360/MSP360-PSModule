@@ -96,7 +96,7 @@ function New-MBSRecoveryDisk {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -115,20 +115,15 @@ function New-MBSRecoveryDisk {
             if ($ScratchSpace){$Argument += " -ss $ScratchSpace"}
             if ($RADirectory){$Argument += " -d ""$RADirectory"""}
             if ($NoPrompt){$Argument += " -no-prompt"}
-            if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
                 
             return $Argument
         }
 
-        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-            $Arguments = 'createrecovery -output full'
-        }else{
-            $Arguments = 'createrecovery -output short'
-        }
+        $Arguments = 'createrecovery'
         $Arguments += Set-Argument
-        Write-Verbose -Message "Arguments: $($Arguments -replace  '-mp "\w*"','-mp "****"')"
+
         Write-Verbose -Message $PSCmdlet.ParameterSetName
-        Start-Process -FilePath $CBB.CBBCLIPath -ArgumentList $Arguments -Wait -NoNewWindow
+        (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword).result
     }
     
     end {

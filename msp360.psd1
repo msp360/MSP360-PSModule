@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '0.8.6.3'
+    ModuleVersion = '0.8.7'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -52,11 +52,17 @@
     - None
 
 - Features
-    - Install-MBSModule was refactored.
-    - Extend Edit-MBSBackupPlan with ExcludeFile/ExcludeDirectory parameters
+    - Chain backup plan option in the Edit-MBSBackupplan
+    - Migrate cmdlets to Start-MBSProcess
+    - Simple install script
     
 - Bug fix:
-    - None
+    - Get-MBSAPI* cmdlets with Powershell v3/v4 cannot convert PSCustomObject to MBS.API.*
+    - Remove .gitlab from the release
+
+- Tests:
+    - Tests: New-MBSRestoreCommonOptions
+    - Tests: New-MBSNetworkCredential
 "@
         }
     }

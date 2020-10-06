@@ -246,6 +246,20 @@ namespace MBS.Agent
         Folder,
         File
     }
+
+    public class CLIResult
+    {
+        public string[] Result;
+        public string[] Warnings;
+        public string[] Errors;
+    }
+
+    public class CLIRawResult
+    {
+        public string stdout;
+        public string stderr;
+        public int ExitCode;
+    }
 }
 
 

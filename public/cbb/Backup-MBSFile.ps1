@@ -159,7 +159,7 @@ function Backup-MBSFile {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -176,7 +176,6 @@ function Backup-MBSFile {
             }else{
                 $Argument += " -aid ""$($StorageAccount.ID)"""
             }
-            if ($MasterPassword){$Argument += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
             
             if($UseServerSideEncryption){$Argument += " -sse yes"}
             if($Null -ne $EncryptionPassword){$Argument += " -ea $($EncryptionAlgorithm)"}
@@ -214,23 +213,7 @@ function Backup-MBSFile {
         }
         $ReturnArray = @()
         $Arguments += Set-Argument
-        #Write-Verbose -Message "Arguments: $($Arguments -replace  '-mp "\w*"','-mp "****"')"
-        $result= Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Arguments -output full
-        $result.stdout.split([Environment]::NewLine) | ForEach-Object -Process {
-            if($_ -match 'ERROR: \w*'){
-                if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                    $ReturnArray += $_
-                }else{
-                    Write-Host $_ -ForegroundColor Red
-                }
-            }elseif ($_ -match 'WARNING: \w*') {
-                if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                    $ReturnArray += $_
-                }else{
-                    Write-Host $_ -ForegroundColor DarkYellow
-                }
-            }
-        }
+        (Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Arguments -output full -MasterPassword $MasterPassword).result | ForEach-Object -Process { $ReturnArray += $_ }
         return $ReturnArray
     }
     

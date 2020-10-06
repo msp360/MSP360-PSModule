@@ -50,10 +50,8 @@ function Compress-MBSDatabase {
     
     process {
         $Arguments = "database -shrink"
-        if ($MasterPassword){$Arguments += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""}
-        $Result = (Start-MBSProcess -CMDPath (Get-MBSAgent).CBBCLIPath -CMDArguments $Arguments -Output full).stdout
-        Write-Verbose $Result
-        (($Result -split "`n" | Select-Object -Skip 1).replace("Shrink","Compression")).replace("shrink","compression")
+        $Result = (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output full -MasterPassword $MasterPassword).result
+        ($Result.replace("Shrink","Compression")).replace("shrink","compression")
     }
     
     end {

@@ -56,7 +56,7 @@ function Get-MBSNetworkCredential {
             Break
         }
         try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne $null -and -not $MasterPassword) {
+            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
                 $MasterPassword = Read-Host Master Password -AsSecureString
             }
         }
@@ -70,21 +70,9 @@ function Get-MBSNetworkCredential {
         } else {
             $Arguments = "nwcList -s"
         }
-        if ($MasterPassword) {
-            $Arguments += " -mp """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MasterPassword)))+""""
-        }
-        $Arguments += " -json"
-        Write-Verbose -Message "Arguments: $($Arguments -replace  '-mp "\w*"','-mp "****"')"
-        $result = (Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Arguments -output json).stdout.replace("Content-Type: application/json; charset=UTF-8","") |ConvertFrom-Json
+        $result = Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Arguments -output json -MasterPassword $MasterPassword
         if ($result.Result -eq "Success") {
             $result.Shares
-        } else {
-            if ('' -ne $result.Warnings) {
-                Write-Warning -Message $result.Warnings[0]
-            } 
-            if ('' -ne $result.Errors) {
-                Write-Error -Message $result.Errors[0] 
-            }
         }
     }
     
