@@ -19,7 +19,7 @@ function Convert-PSObjectToHash {
             $hashtable = @{}
             foreach( $property in $object.psobject.properties )
             {
-                if ( $property.TypeNameOfValue -eq "System.Object[]"){
+                if ( $property.TypeNameOfValue -eq "System.Object[]" -and $null -ne $object."$($property.Name)"){
                     $hashtable[$property.Name] = $object."$($property.Name)" | ForEach-Object -Begin {$array = @()} -process { 
                         if($_.getType().Name -in ("String","Int")){
                             $array += $_

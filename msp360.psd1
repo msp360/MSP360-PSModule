@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '0.8.8'
+    ModuleVersion = '0.9.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -49,16 +49,24 @@
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
 - New cmdlets:
-    - None
+    - Get-MBSPrefix cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/get-mbsprefix)
+    - Get-MBSDiskVolume cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/get-mbsdiskvolume)
 
 - Features
-    - None
+    - Edit-MBSBackupPlan: Add enable/disable BitLocker option
+    - Add verbose messages to Get-MBSAgent, Add/Remove-MBSFirewallRules
+    - Add name of function in beginning of verbose messages
     
 - Bug fix:
-    - Bug: Edit-MBSBackupPlan -Name does not make changes in the backup plan
+    - Bug: Get-MBSAPIUser - error if a user has no notification emails
 
 - Tests:
-    - None
+    - Tests: CommonParameterSet New name, account, schedule, Pre/Post actions, retention Edit-MBSBackupPlan.CommonParameterSet New name, account, schedule, Pre/Post actions, retention
+    - Tests: Add-MBSUserAccount -WindowsAuthD Should not throw
+    - Tests: Check all tests for Should not throw
+    - Tests: Edit-MBSUserAccount
+    - Tests: Get-MBSAgentSetting
+    - Tests: Update-MBSStorageAccount
 "@
         }
     }

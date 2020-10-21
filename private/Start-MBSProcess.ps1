@@ -69,7 +69,7 @@ function Start-MBSProcess {
             Default {}
         }
 
-        Write-Verbose -Message "Arguments: $(((((($CMDArguments -replace  '-mp "\w*"','-mp "****"') -replace '-p "\w*"','-p "****"') -replace '-cp "\w*"','-cp "****"') -replace '-c "\w*"','-c "****"') -replace '-password "\w*"','-password "****"') -replace  '-ep "\w*"','-ep "****"')"
+        Write-Verbose -Message "$($PSCmdlet.MyInvocation.MyCommand.Name): Arguments: $(((((($CMDArguments -replace  '-mp "\w*"','-mp "****"') -replace '-p "\w*"','-p "****"') -replace '-cp "\w*"','-cp "****"') -replace '-c "\w*"','-c "****"') -replace '-password "\w*"','-password "****"') -replace  '-ep "\w*"','-ep "****"')"
         $ProcessStartInfo.Arguments = $CMDArguments
         $Process = New-Object System.Diagnostics.Process
         $Process.StartInfo = $ProcessStartInfo

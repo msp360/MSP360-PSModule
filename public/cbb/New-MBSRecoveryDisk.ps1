@@ -122,7 +122,7 @@ function New-MBSRecoveryDisk {
         $Arguments = 'createrecovery'
         $Arguments += Set-Argument
 
-        Write-Verbose -Message $PSCmdlet.ParameterSetName
+        Write-Verbose -Message "$($PSCmdlet.MyInvocation.MyCommand.Name): $($PSCmdlet.ParameterSetName)"
         (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword).result
     }
     
