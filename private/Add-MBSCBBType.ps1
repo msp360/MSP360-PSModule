@@ -205,6 +205,11 @@ namespace MBS.Agent.Plan
 
 namespace MBS.Agent
 {
+    public class License {
+        public string User;
+        public string ID;
+    }
+
     public class StorageAccount {
         public string ID;
         public string Type;
