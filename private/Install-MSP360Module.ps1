@@ -28,7 +28,7 @@ function Install-MSP360Module {
             }
         }else{
             if((Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue).Version -lt [System.Version]"2.8.5.201"){
-                $Null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -AllowClobber
+                $Null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
             }
             if((Get-Module $_.Module -ListAvailable -ErrorAction SilentlyContinue).Version -lt [System.Version]$_.Version){
                 $Null = Install-Module -Name $_.Module -MinimumVersion $_.Version -Force -AllowClobber -Repository PSGallery
