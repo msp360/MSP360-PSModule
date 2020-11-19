@@ -126,7 +126,7 @@ function Edit-MBSUserAccount {
         $Arguments = 'editaccount'
         $Arguments += Set-Argument
 
-        $Result = Start-MBSProcess -CMDPath CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword
+        $Result = Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output short -MasterPassword $MasterPassword
     }
     
     end {

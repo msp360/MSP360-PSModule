@@ -60,6 +60,12 @@ function New-MBSRestorePlan {
     .PARAMETER VM
     Hyper-V VM name
     
+    .PARAMETER NewVM
+    New Hyper-V machine name
+
+    .PARAMETER ImportVM 
+    Import virtual machine
+    
     .PARAMETER Disk
     Backed up disk ID
     
@@ -134,9 +140,14 @@ function New-MBSRestorePlan {
     Restore C:\temp\test.txt and C:\myFolder,c:\Users folders to E:\Restore
 
     .EXAMPLE
-    PS> New-MBSRestorePlan -Name "test" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Disk "00000000-0000-0000-0000-000000000002" -DestinationDisk "00000000-0000-0000-0000-000000000001" | Start-MBSBackupPlan
+    PS> New-MBSRestorePlan -Name "Restore disk" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Disk "00000000-0000-0000-0000-000000000002" -DestinationDisk "00000000-0000-0000-0000-000000000001" | Start-MBSBackupPlan
 
     Create plan to restore disk with ID "00000000-0000-0000-0000-000000000002" to disk with ID "00000000-0000-0000-0000-000000000001" and start it.
+
+    .EXAMPLE
+    PS> New-MBSRestorePlan -Name "Restore Hyper-V VM" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Host "MyHost" -VM "Server" -NewVM "RestoredServer" -ImportVM $true | Start-MBSBackupPlan
+
+    Create plan to restore Hyper-V VM with name Server as new VM with name RestoredServer and import to Hyper-V.
 
     .INPUTS
     None.
@@ -240,6 +251,14 @@ function New-MBSRestorePlan {
         [Parameter(Mandatory=$true, HelpMessage="Hyper-V VM name", ParameterSetName='HyperV')]
         [string]
         $VM,
+        #
+        [Parameter(Mandatory=$true, HelpMessage="New Hyper-V machine name", ParameterSetName='HyperV')]
+        [string]
+        $NewVM,
+        #
+        [Parameter(Mandatory=$true, HelpMessage="Import virtual machine after restore", ParameterSetName='HyperV')]
+        [bool]
+        $ImportVM=$true,
         #-------------------- Image-Based ---------------
         [Parameter(Mandatory=$true, HelpMessage="Backed up disk ID", ParameterSetName='ImageBasedDisk')]
         [Parameter(Mandatory=$False, HelpMessage="Backed up disk ID", ParameterSetName='ImageBasedVolume')]
@@ -460,7 +479,8 @@ function New-MBSRestorePlan {
                 # ------------- Hyper-V -------------
                 if ($HVHost) {$Argument += " -host ""$HVHost"""}
                 if ($VM) {$Argument += " -machine ""$VM"""}
-
+                if ($NewVM) {$Argument += " -newMachine ""$NewVM"""}
+                if ($ImportVM){$Argument += " -ImportVM yes"}else{$Argument += " -ImportVM no"}
             }
             'MSSQL' {
                 # ------------- MS SQL -------------

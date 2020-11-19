@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '0.10.1'
+    ModuleVersion = '0.11.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -49,20 +49,11 @@
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
 - New cmdlets:
-    - Get-MBSLicense cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/get-mbslicense)
+    - Remove-MBSFile cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/remove-mbsbackup)
+    - Sync-MBSStorageAccount cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/sync-mbstorageaccount/)
 
 - Features
-    - Rename New-MBSApiStorageAccountDestination to New-MBSAPIStorageAccountDestination
-    
-- Bug fix:
-    - Bug: PackageManagement and PowerShellGet not updated upon install
-
-- Tests:
-    - Tests: Get-MBSPlanHistory
-    - Tests bug: Get-MBSDiskVolume.Specific diskId (Guid)
-
-- Article:
-    - Article: Update get-mbsbackupplan article in the KB
+    - New-MBSRestorePlan: Add -newMachine and -importVM parameters
 "@
         }
     }
