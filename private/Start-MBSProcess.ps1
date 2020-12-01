@@ -79,18 +79,18 @@ function Start-MBSProcess {
         if ($Output -eq "json") {
             $result = $Process.StandardOutput.ReadToEnd().replace("Content-Type: application/json; charset=UTF-8","") |ConvertFrom-Json
             if($null -ne $result){
-                if ($result.Result -ne "Success") {
+                #if ($result.Result -ne "Success") {
                     if ('' -ne $result.Warnings) {
                         $result.Warnings | ForEach-Object -Process {
                             Write-Warning -Message $_
                         }
-                    } 
+                    }
                     if ('' -ne $result.Errors) {
                         $result.Errors | ForEach-Object -Process {
                             Write-Error -Message $_
                         }
                     }
-                } 
+                #}
             }
         } elseif (($Output -eq "short") -or ($Output -eq "full")) {
             $result = New-Object -TypeName MBS.Agent.CLIResult

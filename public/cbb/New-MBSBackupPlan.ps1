@@ -13,7 +13,7 @@ function New-MBSBackupPlan {
     Specify storage account object. Use Get-MBSStorageAccount cmdlet to list storages. Example: (Get-MBSStorageAccount -Name "AWS S3")
     
     .PARAMETER MasterPassword
-    Master password. Should be specified if configuration is protected by master password. Use -MasterPassword (ConvertTo-SecureString -string "Your_Password -AsPlainText -Force)
+    Master password. Should be specified if configuration is protected by master password. Use -MasterPassword (ConvertTo-SecureString -string "Your_Password" -AsPlainText -Force)
     
     .PARAMETER Schedule
     Specify schedule. Use New-MBSPlanSchedule to create an object.

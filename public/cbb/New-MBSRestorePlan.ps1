@@ -426,13 +426,14 @@ function New-MBSRestorePlan {
         if($RestorePlanCommonOption.SyncRepositoryBeforeRun){$Argument += " -sync yes"}#else{$Argument += " -sync no"}
         if($RestorePlanCommonOption.EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($RestorePlanCommonOption.EncryptionPassword)))+""""}
         if($RestorePlanCommonOption.StopIfPlanRunsFor.TotalMinutes -gt 0){$Argument += " -stopAfter $( [math]::Round($RestorePlanCommonOption.StopIfPlanRunsFor.TotalHours)):$($RestorePlanCommonOption.StopIfPlanRunsFor.Minutes)"}
-        if($RestorePlanCommonOption.PreActionCommand){$Argument += " -preAction $($RestorePlanCommonOption.PreActionCommand)"}
-        if($RestorePlanCommonOption.PreActionContinueAnyway){$Argument += " -pac yes"}else{$Argument += " -pac no"}
-        if($RestorePlanCommonOption.PostActionCommand){$Argument += " -postAction $($RestorePlanCommonOption.PostActionCommand)"}
-        if($RestorePlanCommonOption.PostActionRunAnyway){$Argument += " -paa yes"}else{$Argument += " -paa no"}
-        if($RestorePlanCommonOption.ResultEmailNotification){$Argument += " -notification $($RestorePlanCommonOption.ResultEmailNotification)"}
-        if($RestorePlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($RestorePlanCommonOption.AddEventToWindowsLog)"}
-
+        if($PSCmdlet.ParameterSetName -ne "MSSQL"){
+            if($RestorePlanCommonOption.PreActionCommand){$Argument += " -preAction $($RestorePlanCommonOption.PreActionCommand)"}
+            if($RestorePlanCommonOption.PreActionContinueAnyway){$Argument += " -pac yes"}else{$Argument += " -pac no"}
+            if($RestorePlanCommonOption.PostActionCommand){$Argument += " -postAction $($RestorePlanCommonOption.PostActionCommand)"}
+            if($RestorePlanCommonOption.PostActionRunAnyway){$Argument += " -paa yes"}else{$Argument += " -paa no"}
+            if($RestorePlanCommonOption.ResultEmailNotification){$Argument += " -notification $($RestorePlanCommonOption.ResultEmailNotification)"}
+            if($RestorePlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($RestorePlanCommonOption.AddEventToWindowsLog)"}
+        }
         if($BackupPrefix){$Argument += " -bp $BackupPrefix"}
         if($RunOnce){$Argument += " -runOnce yes"}else{$Argument += " -runOnce no"}
         if($RestoreFromGlacier){$Argument += " -glacier $RestoreFromGlacier"}

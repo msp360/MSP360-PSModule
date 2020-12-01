@@ -96,7 +96,7 @@ namespace MBS.API
         public string LastName;
         public bool Enabled;
         public MBS.API.AdministratorPermission PermissionsModels;
-        public DateTime LastLogin;
+        public Nullable<DateTime> LastLogin;
         public DateTime DateCreated;
         public string[] Companies;
     }
@@ -171,6 +171,22 @@ namespace MBS.API
         public Decimal StorageCost;
         public Decimal RestoreCost;
         public Decimal TotalCost;
+    }
+
+    public class BillingDetails {
+        public long TotalBackupBytes;
+        public long TotalRestoreBytes;
+        public string UserID;
+        public MBS.API.BillingUserDetailList[] UserDetailList;
+    }
+
+    public class BillingUserDetailList {
+        public string Computer;
+        public long SizeBackup;
+        public long SizeRestore;
+        public string Prefix;
+        public string AccountID;
+        public string Destination;
     }
 
     public class StoragePackage {

@@ -232,6 +232,7 @@ namespace MBS.Agent
     public class StorageAccountContent {
         public MBS.Agent.StorageAccountContentType Type; 
         public string Name;
+        public string FullName;
         public Nullable<DateTime> Date;
         public long Size;
         public bool IsCompressed; 
@@ -249,7 +250,8 @@ namespace MBS.Agent
     public enum StorageAccountContentType
     {
         Folder,
-        File
+        File,
+        Disk
     }
 
     public class CLIResult

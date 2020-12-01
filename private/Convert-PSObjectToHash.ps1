@@ -44,11 +44,15 @@ function Convert-PSObjectToHash {
     }
     
     process {
-        $object | ForEach-Object {
-            $_ | Add-Member @memberParam
+        if ($Host.Version.Major -lt 5) {
+            $object | ForEach-Object {
+                $_ | Add-Member @memberParam
+            }
+    
+            return $object.ToHashtable()
+        }else{
+            return $object
         }
-
-        return $object.ToHashtable()
     }
     
     end {
