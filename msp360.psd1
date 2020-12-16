@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '0.13.0'
+    ModuleVersion = '0.13.1'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'

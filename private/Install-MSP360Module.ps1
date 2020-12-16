@@ -27,10 +27,10 @@ function Install-MSP360Module {
                 [System.IO.Compression.ZipFileExtensions]::ExtractToDirectory(([System.IO.Compression.ZipFile]::Open("$ENV:TEMP\$($_.Module).zip", 'read')), "$ENV:windir\System32\WindowsPowerShell\v1.0\Modules\$($_.Module)")
             }
         }else{
-            if((Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)[0].Version -lt [System.Version]"2.8.5.201"){
+            if((Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue | Select-Object -First 1).Version -lt [System.Version]"2.8.5.201"){
                 $Null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
             }
-            if((Get-Module $_.Module -ListAvailable -ErrorAction SilentlyContinue)[0].Version -lt [System.Version]$_.Version){
+            if((Get-Module $_.Module -ListAvailable -ErrorAction SilentlyContinue | Select-Object -First 1).Version -lt [System.Version]$_.Version){
                 $Null = Install-Module -Name $_.Module -MinimumVersion $_.Version -Force -AllowClobber -Repository PSGallery
                 $Null = Remove-module -Name $_.Module -Force -WarningAction SilentlyContinue
                 $Null = Import-module -Name $_.Module -MinimumVersion $_.Version -Force
