@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '0.12.0'
+    ModuleVersion = '0.13.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -49,18 +49,14 @@
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
 - New cmdlets:
-    - Remove-MBSStaleBackup cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/remove-mbsstalebackup)
-    - Send-MBSFileToSupport cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/send-mbsfiletosupport)
-
-- Features
-    - Get-MBSBackup: Add FullName property 
+    - New-MBSLocalStorageAccount cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbslocalstorageaccount)
+    - Test-MBSStorageAccount cmdlet (https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/test-mbsstorageaccount)
 
 - BugFix:
-    - CLI common parameters differences in restore plans
-    - Detailed flag in Get-MBSPlanHistory doesn't work
-    - Start-MBSProcess does not show a warning message if the result is success
-    - API: Cannot convert value "System.Collections.Hashtable" to type "MBS.API.User[]".
-    - LastLogin in type MBS.API.Administrator can be null
+    - Install-MBSModule: check for 'PackageManagement' version properly
+
+- Tests: 
+    - Remove-MBSBackupPlan tests
 "@
         }
     }

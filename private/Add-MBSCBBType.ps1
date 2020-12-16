@@ -1,6 +1,7 @@
 add-type -typedef @"
 using System;
 using System.Security;
+using System.Net;
 
 namespace MBS.Agent.Plan
 {
@@ -238,6 +239,14 @@ namespace MBS.Agent
         public bool IsCompressed; 
         public bool IsEncrypted; 
         public FileVersions[] Versions;
+    }
+
+    public class TestStorageAccountResult {
+        public string Name;
+        public string HostName;
+        public int RemotePort;
+        public IPAddress RemoteAddress;
+        public bool TestSucceeded; 
     }
 
     public class FileVersions {

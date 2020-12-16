@@ -18,22 +18,22 @@ function Remove-MBSStaleBackup {
     .EXAMPLE
     Remove-MBSStaleBackup -StorageAccount (Get-MBSStorageAccount -Name "AWS")
 
-    Remove stale backup for storage account with the name "AWS"
+    Remove stale backups for storage account with the name "AWS".
 
     .EXAMPLE
     Remove-MBSStaleBackup -StorageAccount (Get-MBSStorageAccount -Name "AWS") -WhatIf
 
-    Emulate removing stale backup for storage account with the name "AWS"
+    Emulate removing stale backups for storage account with the name "AWS".
     
     .EXAMPLE
-    Get-MBSStorageAccount | Remove-MBSStaleBackup -StorageAccount (Get-MBSStorageAccount -Name "AWS")
+    Get-MBSStorageAccount | Remove-MBSStaleBackup
 
-    Remove stale backup for all storage account.
+    Remove stale backups for all storage account.
 
     .EXAMPLE
-    Get-MBSStorageAccount | Remove-MBSStaleBackup -StorageAccount (Get-MBSStorageAccount -Name "AWS") -MasterPassword (ConvertTo-SecureString -string "Your_Password" -AsPlainText -Force)
+    Get-MBSStorageAccount | Remove-MBSStaleBackup -MasterPassword (ConvertTo-SecureString -string "Your_Password" -AsPlainText -Force)
 
-    Remove stale backup for all storage account if the backup agent is protected with the master password.
+    Remove stale backups for all storage account if the backup agent is protected with the master password.
 
     .INPUTS
         MBS.Agent.StorageAccount
@@ -90,7 +90,7 @@ function Remove-MBSStaleBackup {
                     if($NetworkPath){$FullName = "\\"+$FullName}
 
                     if ($FullName -in $Item) {
-                        Write-Host "Item ""$($_.FullName)"" is in the backup plan scope"
+                        Write-Host "Item ""$($_.FullName)"" is in the backup plan scope."
                     }elseif ($Item -like ($FullName+'*')) {
                         $NetworkPathInternal = $false
                         if(($_.Type -eq "Disk" -and $_.Name -like "\\*") -or $NetworkPath){
@@ -102,18 +102,18 @@ function Remove-MBSStaleBackup {
                         if ($StorageAccountContentNextLevel) {
                             Remove-MBSStaleData -StorageAccountContent $StorageAccountContentNextLevel -Item $Item -NetworkPath $NetworkPathInternal
                         }else {
-                            Write-Host "Folder ""$($_.FullName)"" is partly backed up and will not be removed"
+                            Write-Host "Folder ""$($_.FullName)"" is partly backed up and will not be removed."
                         }
                     }else {
                         if ($WhatIf) {
-                            Write-Host "What if: Performing the operation ""Remove MBS Backup"" on target $($_.FullName)"
+                            Write-Host "What if: Performing the operation ""Remove MBS Backup"" on target $($_.FullName)."
                         }else {
-                            Write-Host "Removing: $($_.FullName)"
+                            Write-Host "Removing: $($_.FullName). Please wait..."
                             $Options = @{
                                 StorageAccount = $StorageAccount
                                 MasterPassword = $MasterPassword
                             }           
-                            if(([IO.FileInfo]$_.FullName).Extension){
+                            if(([IO.FileInfo]($_.FullName+'\')).Extension){
                                 $Options.Add("File",$_.FullName)
                             }else {
                                 $Options.Add("Folder",$_.FullName) 
@@ -124,12 +124,71 @@ function Remove-MBSStaleBackup {
                 }
             }
         }
+
+        function Test-MBSExclusions {
+            param (
+                [String]
+                $ExcludedItem,
+                [String]
+                $OriginalExcludedItem
+            )
+            if((Split-Path -Path $ExcludedItem) -ne ''){
+                Write-Verbose ("$($PSCmdlet.MyInvocation.MyCommand.Name): Checking excluded item: "+$ExcludedItem)
+                $PlanWithoutExclusions | ForEach-Object -Process {
+                    Write-Verbose ("$($PSCmdlet.MyInvocation.MyCommand.Name): Backup scope ($($_.Name)): "+$_.Items.PlanItem.Path)
+                }
+                if((Split-Path -Path $ExcludedItem) -notin $PlanWithoutExclusions.Items.PlanItem.Path){
+                    Test-MBSExclusions -ExcludedItem (Split-Path -Path $ExcludedItem) -OriginalExcludedItem $OriginalExcludedItem
+                }else{
+                    Write-Host "Excluded item ""$($OriginalExcludedItem)"" is in the backup scope."
+                }
+            }else{
+                Write-Host "Excluded item ""$($OriginalExcludedItem)"" is NOT in the backup scope."
+                if ($WhatIf) {
+                    Write-Host "What if: Performing the operation ""Remove MBS Backup"" on target $($OriginalExcludedItem)."
+                }else {
+                    Write-Host "Removing: $($OriginalExcludedItem). Please wait..."
+                    $Options = @{
+                        StorageAccount = $StorageAccount
+                        MasterPassword = $MasterPassword
+                    }           
+                    if(([IO.FileInfo]$OriginalExcludedItem).Extension){
+                        $Options.Add("File",$OriginalExcludedItem)
+                    }else {
+                        $Options.Add("Folder",$OriginalExcludedItem) 
+                    }
+                    Remove-MBSBackup @Options
+                }
+            }
+        }
     }
     
     process {
-        $Items = (Get-MBSBackupPlan -PlanType File-Level | Where-Object ConnectionID -EQ $StorageAccount.ID).Items.PlanItem.Path
+        $Plans = Get-MBSBackupPlan -PlanType File-Level | Where-Object ConnectionID -EQ $StorageAccount.ID
+        Write-Host "Checking backup scopes."
         $Backup = Get-MBSBackup -StorageAccount $StorageAccount -MasterPassword $MasterPassword
-        Remove-MBSStaleData -StorageAccountContent $Backup -Item $Items
+        Remove-MBSStaleData -StorageAccountContent $Backup -Item $Plans.Items.PlanItem.Path
+
+        Write-Host "Checking excluded items."
+        foreach ($Plan in $Plans) {
+            $Plan.ExcludedItems.PlanItem.Path | ForEach-Object -Process {
+                $Item = $_
+                $Options = @{
+                    StorageAccount = $StorageAccount
+                    MasterPassword = $MasterPassword
+                }           
+                if(([IO.FileInfo]$Item).Extension){
+                    $Options.Add("File",$Item)
+                }else {
+                    $Options.Add("Folder",$Item) 
+                }
+                
+                if (Get-MBSBackup @Options -ErrorAction SilentlyContinue) {
+                    $PlanWithoutExclusions = $Plans | Where-Object {$_.ExcludedItems.PlanItem.Path -notin $Item}
+                    Test-MBSExclusions -ExcludedItem $Item -OriginalExcludedItem $Item
+                }
+            }
+        }
     }
     
     end {
