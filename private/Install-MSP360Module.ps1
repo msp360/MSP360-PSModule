@@ -43,14 +43,15 @@ function Install-MSP360Module {
     $ModuleInstallOptions = @{
         Force = $true
     }
-
+    if($RequiredVersion){
+        $ModuleInstallOptions.Add("RequiredVersion",$RequiredVersion)
+    }
     if($AllowAlpha){
         $ModuleInstallOptions.Add("AllowPrerelease",$true)
         Register-PSRepository -Name "MSP360" -SourceLocation "http://18.159.222.66/nuget/MSP360/" -InstallationPolicy Trusted
         $ModuleInstallOptions.Add("Repository","MSP360")
     }
-    if($RequiredVersion){$ModuleInstallOptions.Add("RequiredVersion",$RequiredVersion)}
-
     Install-Module -Name msp360 @ModuleInstallOptions
     Import-Module -Name msp360 -Force
 }
+
