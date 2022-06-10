@@ -2,6 +2,7 @@ add-type -typedef @"
 using System;
 using System.Security;
 using System.Net;
+using System.Collections.Generic;
 
 namespace MBS.Agent.Plan
 {
@@ -11,6 +12,15 @@ namespace MBS.Agent.Plan
         public string StorageAccount;
         public MBS.Agent.Plan.BackupPlanCommonOption BackupPlanCommonOption;
         public MBS.Agent.Plan.Schedule Schedule;
+    }
+
+    public abstract class NBFBackupPlan {
+        public string Name;
+        public string ID;
+        public MBS.Agent.StorageAccount StorageAccount;
+        public MBS.Agent.Plan.NBFBackupPlanCommonOption BackupPlanCommonOption;
+        public MBS.Agent.Plan.NBFIncrementalSchedule Schedule;
+        public MBS.Agent.Plan.NBFFullSchedule ForceFullSchedule;
     }
 
     public class BackupPlanCommonOption {
@@ -24,9 +34,9 @@ namespace MBS.Agent.Plan
         public TimeSpan StopIfPlanRunsFor;
         public bool RunMissedPlanImmediately;
         public string PreActionCommand;
-        public bool PreActionContinueAnyway;
+        public Nullable<bool> PreActionContinueAnyway;
         public string PostActionCommand;
-        public bool PostActionRunAnyway;
+        public Nullable<bool> PostActionRunAnyway;
         public MBS.Agent.Plan.Notification ResultEmailNotification;
         public MBS.Agent.Plan.Notification AddEventToWindowsLog;
         public Nullable<TimeSpan> KeepVersionPeriod;
@@ -35,9 +45,33 @@ namespace MBS.Agent.Plan
         public Nullable<TimeSpan> DelayPurgePeriod;
     }
 
+    public class NBFBackupPlanCommonOption {
+        public bool SyncRepositoryBeforeRun;
+        public bool UseServerSideEncryption;
+        public MBS.Agent.Plan.EncryptionAlgorithm EncryptionAlgorithm;
+        public SecureString EncryptionPassword;
+        public bool UseCompression;
+        public MBS.Agent.Plan.StorageClass StorageClass;
+        public bool FullConsistencyCheck;
+        public TimeSpan StopIfPlanRunsFor;
+        public bool RunMissedPlanImmediately;
+        public string PreActionCommand;
+        public Nullable<bool> PreActionContinueAnyway;
+        public string PostActionCommand;
+        public Nullable<bool> PostActionRunAnyway;
+        public MBS.Agent.Plan.Notification ResultEmailNotification;
+        public MBS.Agent.Plan.Notification AddEventToWindowsLog;
+        public Nullable<TimeSpan> KeepVersionPeriod;
+        public int GFSKeepWeekly;
+        public int GFSKeepMonthly;
+        public int GFSKeepYearly;
+        public MBS.Agent.Plan.Month GFSMonthOfTheYear;
+    }
+
     public class FileLevelBackupPlan : BackupPlan{
         public MBS.Agent.Plan.Schedule ForceFullSchedule;
         public bool UseBlockLevelBackup;
+        public bool UseFastNTFSScan;
         public bool BackupNTFSPermissions;
         public bool ForceUsingVSS;
         public bool UseShareReadWriteModeOnError;
@@ -50,8 +84,27 @@ namespace MBS.Agent.Plan
         public string ExcludeFilesMask;
         public bool IgnoreErrorPathNotFound;
         public bool TrackDeletedFiles;
-        public string BackupFile;
-        public string BackupDirectory;
+        public System.Collections.Generic.List<string> BackupFile;
+        public System.Collections.Generic.List<string> BackupDirectory;
+        public System.Collections.Generic.List<string> ExcludeFile;
+        public System.Collections.Generic.List<string> ExcludeDirectory;
+        public bool GenerateDetailedReport;
+    }  
+
+    public class NBFFileLevelBackupPlan : NBFBackupPlan{
+        public bool BackupNTFSPermissions;
+        public bool FastNTFSScan;
+        public bool ForceUsingVSS;
+        public bool UseShareReadWriteModeOnError;
+        public bool BackupEmptyFolders;
+        public string BackupOnlyAfter;
+        public bool ExcludeSystemHiddenFiles;
+        public System.Collections.Generic.List<string> SkipFolder;
+        public System.Collections.Generic.List<string> IncludeFilesMask;
+        public System.Collections.Generic.List<string> ExcludeFilesMask;
+        public bool IgnoreErrorPathNotFound;
+        public System.Collections.Generic.List<string> BackupItem;
+        public System.Collections.Generic.List<string> ExcludeItem;
         public bool GenerateDetailedReport;
     }  
 
@@ -65,6 +118,36 @@ namespace MBS.Agent.Plan
         public bool useSyntheticFull;
         public int prefetchBlockCount;
         public string blockSize;
+        public string[] ExcludeItem;
+        public bool KeepBitLocker;
+        public string[] KeepBitLockerEnableForVolume;
+        public string[] KeepBitLockerDisableForVolume;
+    }
+
+    public class NBFImageBasedBackupPlan : NBFBackupPlan {
+        public MBS.Agent.Plan.BackupVolumeType BackupVolumes;
+        public System.Collections.Generic.List<MBS.Agent.IBBVolume> Volumes;
+        public bool DisableVSS;
+        public bool IgnoreBadSectors;
+        public bool UseSystemVSS;
+        public Nullable<int> PrefetchBlockCount;
+        public MBS.Agent.Plan.BlockSize BlockSize;
+        public System.Collections.Generic.List<string> ExcludeItem;
+        public bool KeepBitLocker;
+        public System.Collections.Generic.List<string> KeepBitLockerEnableForVolume;
+        public System.Collections.Generic.List<string> KeepBitLockerDisableForVolume;
+        public MBS.Agent.Plan.RestoreVerificationMode RestoreVerificationMode;
+    }
+
+    public class NBFImageBasedBackupPlanCBB : NBFBackupPlan {
+        public MBS.Agent.Plan.BackupVolumeType BackupVolumes;
+        public System.Collections.Generic.List<MBS.Agent.IBBVolumeCBB> Volumes;
+        public bool DisableVSS;
+        public bool IgnoreBadSectors;
+        public bool UseSystemVSS;
+        public Nullable<int> PrefetchBlockCount;
+        public MBS.Agent.Plan.BlockSize BlockSize;
+        public MBS.Agent.Plan.RestoreVerificationMode RestoreVerificationMode;
     }
 
     public class HyperVBackupPlan : BackupPlan {
@@ -89,10 +172,10 @@ namespace MBS.Agent.Plan
 
     public class Schedule {
         public MBS.Agent.Plan.ScheduleFrequency Frequency;
-        public DateTime At;
+        public Nullable<DateTime> At;
         public int DayOfMonth;
         public System.DayOfWeek[] DayOfWeek;
-        public string WeekNumber;
+        public Nullable<MBS.Agent.Plan.WeekNumber> WeekNumber;
         public TimeSpan OccursFrom;
         public TimeSpan OccursTo;
         public TimeSpan OccursEvery;
@@ -100,16 +183,77 @@ namespace MBS.Agent.Plan
         public DateTime RepeatStartDate;
     }
 
+    public class NBFIncrementalSchedule {
+        public MBS.Agent.Plan.NBFScheduleFrequency Frequency;
+        public Nullable<DateTime> At;
+        public int DayOfMonth;
+        public System.DayOfWeek[] DayOfWeek;
+        public Nullable<MBS.Agent.Plan.WeekNumber> WeekNumber;
+        public TimeSpan OccursFrom;
+        public TimeSpan OccursTo;
+        public TimeSpan OccursEvery;
+    }
+
+    public class NBFFullSchedule {
+        public MBS.Agent.Plan.NBFScheduleFrequency Frequency;
+        public int DayOfMonth;
+        public System.DayOfWeek[] DayOfWeek;
+        public Nullable<MBS.Agent.Plan.WeekNumber> WeekNumber;
+    }
+
     public class RestorePlanCommonOption {
         public bool SyncRepositoryBeforeRun;
         public SecureString EncryptionPassword;
         public TimeSpan StopIfPlanRunsFor;
         public string PreActionCommand;
-        public bool PreActionContinueAnyway;
+        public Nullable<bool> PreActionContinueAnyway;
         public string PostActionCommand;
-        public bool PostActionRunAnyway;
+        public Nullable<bool> PostActionRunAnyway;
         public MBS.Agent.Plan.Notification ResultEmailNotification;
         public MBS.Agent.Plan.Notification AddEventToWindowsLog;
+    }
+
+    public enum WeekNumber
+    {
+        First,
+        Second,
+        Third,
+        Fourth,
+        Penultimate,
+        Last
+    }
+
+    public enum RestoreVerificationMode
+    {
+        DoNotRun,
+        RunForFull,
+        RunForIncremental,
+        RunForFullAndIncremental
+    }
+
+    public enum BlockSize
+    {
+        K1024 = 1024,
+        K512 = 512,
+        K256 = 256,
+        K128 = 128
+    }
+
+    public enum Month
+    {
+        NotSet = 0,
+        January = 1,
+        February = 2,
+        March = 3,
+        April = 4,
+        May = 5,
+        June = 6,
+        July = 7,
+        August = 8,
+        September = 9,
+        October = 10,
+        November = 11,
+        December = 12
     }
 
     public enum DatabaseSelectionType
@@ -122,6 +266,7 @@ namespace MBS.Agent.Plan
     public enum BackupVolumeType
     {
         AllVolumes,
+        FixedVolumes,
         SystemRequired,
         SelectedVolumes
     }
@@ -155,14 +300,26 @@ namespace MBS.Agent.Plan
         StandardIA,
         OneZoneIA,
         Glacier,
+        GlacierInstantRetrieval,
         GlacierDeepArchive
+    }
+
+    public enum StorageClassCBB
+    {
+        STANDARD,
+        INTELLIGENT_TIERING,
+        STANDARD_IA,
+        ONEZONE_IA,
+        GLACIER,
+        GLACIER_IR,
+        DEEP_ARCHIVE
     }
 
     public enum Notification
     {
+        off,
         errorOnly,
-        on,
-        off
+        on
     }
 
     public enum ScheduleFrequency
@@ -173,6 +330,15 @@ namespace MBS.Agent.Plan
         Monthly,
         DayofMonth,
         Realtime
+    }
+
+    public enum NBFScheduleFrequency
+    {
+        Once,
+        Daily,
+        Weekly,
+        Monthly,
+        DayofMonth
     }
 
     public enum GlacierRestoreType
@@ -283,7 +449,13 @@ namespace MBS.Agent
         public DateTime DateUTC;
         public string Type;
         public bool Encrypted;
-        public MBS.Agent.IBBDisk[] Disks;
+        public MBS.Agent.IBBBackupDisk[] Disks;
+    }
+
+    public class IBBBackupDisk : IBBDisk
+    {
+        public string BackupType;
+        public Nullable<DateTime> Date;
     }
 
     public class IBBDisk
@@ -293,24 +465,80 @@ namespace MBS.Agent
         public long Capacity;
         public string Model;
         public string Id;
-        public MBS.Agent.IBBVolume[] Volumes;
+        public System.Collections.Generic.List<MBS.Agent.IBBVolume> Volumes;
+    }
+
+    public class IBBDiskV6
+    {
+        public int DiskNumber;
+        public string DriveType;
+        public long Capacity;
+        public string Model;
+        public string DiskId;
+        public System.Collections.Generic.List<MBS.Agent.IBBVolumeV6> Volumes;
     }
 
     public class IBBVolume
     {
-        public string MountPoints;
+        public string[] MountPoints;
         public bool Supported;
         public bool RequiredBySystem;
         public string DriveType;
         public string FileSystemType;
         public string WindowsVolumeIdentity;
-        public int Length;
-        public int UsedSpace;
+        public long Length;
+        public long UsedSpace;
         public string Label;
         public bool IsBoot;
         public bool IsActive;
+        public Nullable<bool> IsBitLocker;
+    }
+
+    public class IBBVolumeCBB : IBBVolume
+    {
+        public MBS.Agent.IBBVolumeBackupOptionsCBB BackupOptions;
+    }
+
+    public class IBBVolumeBackupOptionsCBB
+    {
+        public bool UseVss;
+        public System.Collections.Generic.List<MBS.Agent.IBBVolumeBackupOptionsExcludeRulesCBB> ExcludeRules;
+        public bool KeepBitLocker;
+    }
+
+    public class IBBVolumeBackupOptionsExcludeRulesCBB
+    {
+        public string Folder;
+        public string Mask;
+        public bool Recursive;
+        public bool DeleteFolder;
+    }
+
+    public class IBBVolumeV6
+    {
+        public string[] MountPoints;
+        public bool Supported;
+        public bool RequiredBySystem;
+        public string DriveType;
+        public string FileSystemType;
+        public string WindowsVolumeIdentity;
+        public long Length;
+        public long UsedSpace;
     }
 }
 
+namespace MBS.PSModule
+{
+    public class Settings
+    {
+        public string CBBPath;
+        public string CBBProgramData;
+        public bool SkipCompression;
+        public bool SkipEncryption;
+        public bool SkipStorageClass;
+        public bool SkipSSE;
+        public bool SkipVSS;
+    }
+}
 
 "@

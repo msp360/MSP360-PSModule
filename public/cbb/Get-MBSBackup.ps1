@@ -43,10 +43,10 @@ function Get-MBSBackup {
         MBS.Agent.StorageAccountContent
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/get-mbsbackup
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/get-mbsbackup
 
     #>
 
@@ -86,13 +86,16 @@ function Get-MBSBackup {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     
@@ -108,66 +111,131 @@ function Get-MBSBackup {
 
         $Result = Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output json -MasterPassword $MasterPassword
         
+
         if ($Result.Result -eq "Success") {
             $StorageAccountContent = @()
-            if ($Result.Directories.Files){
-                $Result.Directories.Files | ForEach-Object {
-                    $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
-                        Type = "File"
-                        Name = $_.Name
-                        FullName = $Folder.Trimend('\')+'\'+$_.Name
-                        Date = $_.Date
-                        Size = $_.Size
-                        IsCompressed = $_.IsCompressed
-                        IsEncrypted = $_.IsEncrypted
+
+            if ([System.version](Get-MBSAgent).version -lt [System.version]"7.1.0.0") {
+                if ($Result.Directories.Files){
+                    $Result.Directories.Files | ForEach-Object {
+                        $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
+                            Type = "File"
+                            Name = $_.Name
+                            FullName = $Folder.Trimend('\')+'\'+$_.Name
+                            Date = $_.Date
+                            Size = $_.Size
+                            IsCompressed = $_.IsCompressed
+                            IsEncrypted = $_.IsEncrypted
+                        }
                     }
                 }
-            }
-            
-            if ($PSCmdlet.ParameterSetName -eq "Root") {
-                $Result.Directories.Folders | ForEach-Object {
-                    if($_.Name){
+
+                if ($PSCmdlet.ParameterSetName -eq "Root") {
+                    $Result.Directories.Folders | ForEach-Object {
+                        if($_.Name){
+                            $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
+                                Type = "Disk"
+                                Name = $_.Name
+                                FullName = $_.Name
+                                Date = $_.Date
+                                Size = $_.Size
+                                IsCompressed = $_.IsCompressed
+                                IsEncrypted = $_.IsEncrypted
+                            }
+                            if($Recurse){
+                                $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder $_.Name -Recurse
+                            }
+                        }
+                    }
+                }elseif ($Result.Directories.Folders){
+                    $Result.Directories.Folders | ForEach-Object {
                         $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
-                            Type = "Disk"
+                            Type = "Folder"
                             Name = $_.Name
-                            FullName = $_.Name
+                            FullName = $Folder.Trimend('\')+'\'+$_.Name
                             Date = $_.Date
                             Size = $_.Size
                             IsCompressed = $_.IsCompressed
                             IsEncrypted = $_.IsEncrypted
                         }
                         if($Recurse){
-                            $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder $_.Name -Recurse
+                            $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder ($Folder.Trimend('\')+'\'+$_.Name) -Recurse
                         }
                     }
                 }
-            }elseif ($Result.Directories.Folders){
-                $Result.Directories.Folders | ForEach-Object {
-                    $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
-                        Type = "Folder"
-                        Name = $_.Name
-                        FullName = $Folder.Trimend('\')+'\'+$_.Name
+
+                if ($Result.FileVersions){
+                    $Result.FileVersions | ForEach-Object {
+                        $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{
+                        Type = "File"
+                        Name = $_.Path
                         Date = $_.Date
                         Size = $_.Size
                         IsCompressed = $_.IsCompressed
                         IsEncrypted = $_.IsEncrypted
-                    }
-                    if($Recurse){
-                        $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder ($Folder.Trimend('\')+'\'+$_.Name) -Recurse
+                        Versions = $($array = @(); $_.Versions | ForEach-Object {$ht= @{}; $array +=New-Object -TypeName MBS.Agent.FileVersions -property $($_.psobject.properties | ForEach-Object {$ht[$_.Name] = $_.Value}; $ht)};$array)
+                        }
                     }
                 }
-            }
+            } else {
+                # CBB 7.2
+                if ($Result.Files){
+                    $Result.Files | ForEach-Object {
+                        $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
+                            Type = "File"
+                            Name = $_.Name
+                            FullName = $Folder.Trimend('\')+'\'+$_.Name
+                            Date = $_.Date
+                            Size = $_.Size
+                            IsCompressed = $_.IsCompressed
+                            IsEncrypted = $_.IsEncrypted
+                        }
+                    }
+                }
 
-            if ($Result.FileVersions){
-                $Result.FileVersions | ForEach-Object {
+                if ($PSCmdlet.ParameterSetName -eq "Root") {
+                    $Result.Folders | ForEach-Object {
+                        if($_.Name){
+                            $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
+                                Type = "Disk"
+                                Name = $_.Name
+                                FullName = $_.Name
+                                Date = $_.Date
+                                Size = $_.Size
+                                IsCompressed = $_.IsCompressed
+                                IsEncrypted = $_.IsEncrypted
+                            }
+                            if($Recurse){
+                                $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder $_.Name -Recurse
+                            }
+                        }
+                    }
+                }elseif ($Result.Folders){
+                    $Result.Folders | ForEach-Object {
+                        $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{ 
+                            Type = "Folder"
+                            Name = $_.Name
+                            FullName = $Folder.Trimend('\')+'\'+$_.Name
+                            Date = $_.Date
+                            Size = $_.Size
+                            IsCompressed = $_.IsCompressed
+                            IsEncrypted = $_.IsEncrypted
+                        }
+                        if($Recurse){
+                            $StorageAccountContent += Get-MBSBackup -StorageAccount $StorageAccount -Folder ($Folder.Trimend('\')+'\'+$_.Name) -Recurse
+                        }
+                    }
+                }
+
+                if ($Result.Versions){
                     $StorageAccountContent += [MBS.Agent.StorageAccountContent]@{
-                    Type = "File"
-                    Name = $_.Path
-                    Date = $_.Date
-                    Size = $_.Size
-                    IsCompressed = $_.IsCompressed
-                    IsEncrypted = $_.IsEncrypted
-                    Versions = $($array = @(); $_.Versions | ForEach-Object {$ht= @{}; $array +=New-Object -TypeName MBS.Agent.FileVersions -property $($_.psobject.properties | ForEach-Object {$ht[$_.Name] = $_.Value}; $ht)};$array)
+                        Type = "File"
+                        Name = $Result.Folder.Name.Trimend('\')+'\'+$Result.File.Name
+                        Date = $Result.File.Date
+                        Size = $Result.File.Size
+                        IsCompressed = $Result.File.IsCompressed
+                        IsEncrypted = $Result.File.IsEncrypted
+                        Versions = $($array = @(); $Result.Versions | ForEach-Object {$ht= @{}; $array +=New-Object -TypeName MBS.Agent.FileVersions -property $($_.psobject.properties | ForEach-Object {$ht[$_.Name] = $_.Value}; $ht)};$array)
                     }
                 }
             }

@@ -4,7 +4,7 @@ function Remove-MBSStaleBackup {
     Removes backed up folders and files which are excluded from the backup plan.
     
     .DESCRIPTION
-    Compares already backed up folder and files with backup items in the backup plan.
+    Compares already backed up folder and files with backup items in the backup plan. The cmdlet processes data uploaded with CBF (Legacy) file-level backup plans only.
     
     .PARAMETER StorageAccount
     Specify the storage account object. Use Get-MBSStorageAccount cmdlet to list storages. Example: (Get-MBSStorageAccount -Name "AWS S3")
@@ -43,10 +43,10 @@ function Remove-MBSStaleBackup {
         String[]
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/remove-mbsstalebackup/
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/remove-mbsstalebackup
     #>
 
     [CmdletBinding()]
@@ -67,14 +67,18 @@ function Remove-MBSStaleBackup {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
         }
-        catch {
-            
-        }
+        
         function Remove-MBSStaleData {
             param (
                 [MBS.Agent.StorageAccountContent[]]
@@ -164,7 +168,7 @@ function Remove-MBSStaleBackup {
     }
     
     process {
-        $Plans = Get-MBSBackupPlan -PlanType File-Level | Where-Object ConnectionID -EQ $StorageAccount.ID
+        $Plans = Get-MBSBackupPlan -PlanType File-Level -PlanFormat CBF | Where-Object ConnectionID -EQ $StorageAccount.ID
         Write-Host "Checking backup scopes."
         $Backup = Get-MBSBackup -StorageAccount $StorageAccount -MasterPassword $MasterPassword
         Remove-MBSStaleData -StorageAccountContent $Backup -Item $Plans.Items.PlanItem.Path

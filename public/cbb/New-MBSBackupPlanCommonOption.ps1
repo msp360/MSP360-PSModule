@@ -7,7 +7,7 @@ function New-MBSBackupPlanCommonOption {
     Create BackupPlanCommonOption type object with common backup plan options. Used with New-MBSBackupPlan cmdlet.
     
     .PARAMETER SyncRepositoryBeforeRun
-    Syncronize local repository before running backup plan
+    Synchronize local repository before running backup plan
     
     .PARAMETER UseServerSideEncryption
     Use server side encryption (valid only for Amazon S3)
@@ -75,11 +75,12 @@ function New-MBSBackupPlanCommonOption {
         MBS.Agent.Plan.BackupPlanCommonOption
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsbackupplancommonoption
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbsbackupplancommonoption
     #>
+
     [CmdletBinding()]
     param (
         #
@@ -126,8 +127,8 @@ function New-MBSBackupPlanCommonOption {
         #
         [Parameter(Mandatory=$False, HelpMessage='Specify to continue backup plan if pre-backup action failed. Possible values: $true/$false')]
         [Alias("pac")]
-        [boolean]
-        $PreActionContinueAnyway=$False,
+        [Nullable[boolean]]
+        $PreActionContinueAnyway,
         #
         [Parameter(Mandatory=$False, HelpMessage="Specify command to be executed after backup has been successfully completed.")]
         [string]
@@ -135,16 +136,16 @@ function New-MBSBackupPlanCommonOption {
         #
         [Parameter(Mandatory=$False, HelpMessage='Specify to execute post-backup action in any case (regardless the backup result). Possible values: $true/$false')]
         [Alias("paa")]
-        [boolean]
-        $PostActionRunAnyway=$False,
+        [Nullable[boolean]]
+        $PostActionRunAnyway,
         #
         [Parameter(Mandatory=$False, HelpMessage="Specify to send backup plan result notification email when backup fails (errorOnly) or in all cases (on). Prior to turn on the notification settings must be configured. Possible values: errorOnly, on, off")]
         [MBS.Agent.Plan.Notification]
-        $ResultEmailNotification = 'on',
+        $ResultEmailNotification = 'off',
         #
         [Parameter(Mandatory=$False, HelpMessage="Specify to add entry to Windows Event Log when backup fails (errorOnly) or in all cases (on). Possible values: errorOnly, on, off")]
         [MBS.Agent.Plan.Notification]
-        $AddEventToWindowsLog = 'on',
+        $AddEventToWindowsLog = 'off',
         # ---------------------------- Retention Policy -------------------------
         #
         [Parameter(Mandatory=$False, HelpMessage="Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180. ")]

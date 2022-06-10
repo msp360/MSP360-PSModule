@@ -35,10 +35,10 @@ function Send-MBSLog {
     None
 
     .NOTES
-    Author: Andrew Anushin
+    Author: MSP360 Onboarding Team
 
     .LINK
-    https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/send-mbslog/
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/send-mbslog
     #>
 
     [CmdletBinding()]

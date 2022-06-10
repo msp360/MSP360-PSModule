@@ -6,7 +6,10 @@ function Install-MSP360Module {
         $AllowAlpha,
         [Parameter()]
         [string]
-        $RequiredVersion
+        $RequiredVersion,
+        [Parameter()]
+        [switch]
+        $CleanInstall
     )
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -40,6 +43,17 @@ function Install-MSP360Module {
         }
     }
     $Null = Import-PackageProvider -Name PowerShellGet -Force -MinimumVersion 2.2
+    if ($CleanInstall) {
+        Uninstall-Module -Name msp360 -AllVersions -ErrorAction SilentlyContinue
+    } else {
+        $LatestInstalledVersion = [System.Version](Get-InstalledModule -Name msp360 -ErrorAction SilentlyContinue).Version
+        if ($LatestInstalledVersion) {
+            if (($LatestInstalledVersion.Major -lt 2) -And ((-Not($RequiredVersion)) -Or ([System.Version]$RequiredVersion -ge [System.Version]'2.0.0'))) {
+                Write-Warning -Message "Latest installed MSP360 PowerShell Module version is $($LatestInstalledVersion.ToString()). New version of the module is signed with an updated digital certificate. Uninstalling previous versions of the module before update..."
+                Uninstall-Module -Name msp360 -AllVersions
+            }
+        }
+    }
     $ModuleInstallOptions = @{
         Force = $true
     }

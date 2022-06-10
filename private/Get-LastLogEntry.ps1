@@ -25,7 +25,8 @@ function Get-LastLogEntry {
     System.String
 
     .NOTES
-        Author: Andrew Anushin
+    Author: MSP360 Onboarding Team
+    
     .LINK
 
     #>

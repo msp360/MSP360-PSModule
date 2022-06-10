@@ -14,6 +14,9 @@ function Edit-MBSUserAccount {
 
     .PARAMETER SSL
     Use SSL for user backup storages. 
+
+    .PARAMETER BackupPrefix
+    Set different backup prefix for computer 
     
     .PARAMETER WindowsAuth
     Use Windows authorization
@@ -50,6 +53,16 @@ function Edit-MBSUserAccount {
 
     Login using Windows authentication in direct mode.
 
+    .EXAMPLE
+    PS C:\> Edit-MBSUserAccount -WindowsAuthD
+
+    Login using Windows authentication in direct mode.
+
+    .EXAMPLE
+    PS C:\> Edit-MBSUserAccount -BackupPrefix SamplePrefix
+
+    Change backup prefix to the specified one
+
     .INPUTS
         None
 
@@ -57,11 +70,12 @@ function Edit-MBSUserAccount {
         String
 
     .NOTES
-        Author: Ivan Skorin
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/edit-mbsuseraccount
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/edit-mbsuseraccount
     #>
+    
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, HelpMessage="MBS User account name", ParameterSetName='MBSUser')]
@@ -73,6 +87,11 @@ function Edit-MBSUserAccount {
         [Parameter(Mandatory=$false, HelpMessage="Use SSL.", ParameterSetName='MBSUser')]
         [Nullable[boolean]]
         $SSL,
+        [Parameter(Mandatory=$false, HelpMessage="Specify Backup prefix", ParameterSetName='MBSUser')]
+        [Parameter(Mandatory=$false, HelpMessage="Specify Backup prefix", ParameterSetName='WindowsAuth')]
+        [Parameter(Mandatory=$false, HelpMessage="Specify Backup prefix", ParameterSetName='WindowsAuthDirectMode')]
+        [String]
+        $BackupPrefix,
         [Parameter(Mandatory=$true, HelpMessage="Use Windows authorization", ParameterSetName='WindowsAuth')]
         [Switch]
         $WindowsAuth,
@@ -95,12 +114,16 @@ function Edit-MBSUserAccount {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
         }
     }
     
@@ -108,10 +131,11 @@ function Edit-MBSUserAccount {
         function Set-Argument {
             if ($User){$Argument += " -e $User"}
             if ($Password){$Argument += " -p """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)))+""""}
+            if ($BackupPrefix){$Argument += " -bp $BackupPrefix"}
             if ($WindowsAuth){$Argument += " -winauth"}
             if ($DomainOnly){$Argument += " -domainOnly"}
             if ($null -ne $SSL){
-                if ($SLL) {
+                if ($SSL) {
                     $Argument += " -ssl yes"
                 }else{
                     $Argument += " -ssl no"

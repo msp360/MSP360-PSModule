@@ -45,14 +45,16 @@ function Get-MBSDiskVolume {
     None.
 
     .OUTPUTS
+    System.Collections.Generic.List[MBS.Agent.IBBDisk]
     System.Management.Automation.PSCustomObject
 
     .NOTES
-    Author: Ivan Skorin
+    Author: MSP360 Onboarding Team
 
     .LINK
-    https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/get-mbsdiskvolume/
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/get-mbsdiskvolume
     #>
+
     [CmdletBinding(DefaultParameterSetName='AllVolumes')]
     param (
         # Parameter - List all disk volumes
@@ -81,17 +83,21 @@ function Get-MBSDiskVolume {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     
     process {
+        
         $Arguments = " listDiskVolumes"
         switch ($PSCmdlet.ParameterSetName) {
             'AllVolumes' {  $Arguments += " -a" }
@@ -102,7 +108,15 @@ function Get-MBSDiskVolume {
         }
         $result = Start-MBSProcess -cmdpath $CBB.CBBCLIPath -cmdarguments $Arguments -output json -MasterPassword $MasterPassword
         if ($result.Result -eq "Success") {
-            $result.Disks
+            if ([System.version]$CBB.version -lt [System.version]"7.1.0.0"){
+                $Result.Disks 
+            }else {
+                $Disks = New-Object -TypeName "System.Collections.Generic.List[MBS.Agent.IBBDisk]" 
+                $Result.Disks | ForEach-Object -Process {
+                    $Disks.Add([MBS.Agent.IBBDisk]$_)
+                }
+                ,$Disks
+            }
         }
     }
     

@@ -34,7 +34,11 @@ function New-MBSLocalStorageAccount {
     Add new local backup storage with path "C:\Backups" and name "Local Backup" to agent protected with a master password.
     
     .NOTES
-    General notes
+    Author: MSP360 Onboarding Team
+    
+    .LINK
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbslocalstorageaccount
+    
     #>
 
     [CmdletBinding()]
@@ -57,13 +61,16 @@ function New-MBSLocalStorageAccount {
         if (-not($Null = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     

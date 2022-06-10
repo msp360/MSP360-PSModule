@@ -24,8 +24,7 @@ function Start-MBSProcess {
     .OUTPUTS
         PSCustomObject
     .NOTES
-        Author: Alex Volkov
-        Editor: Andrew Anushin
+        Author: MSP360 Onboarding Team
     #>
 
     [CmdletBinding()]

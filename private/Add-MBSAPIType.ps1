@@ -99,6 +99,7 @@ namespace MBS.API
         public Nullable<DateTime> LastLogin;
         public DateTime DateCreated;
         public string[] Companies;
+        public MBS.API.AccessToCompaniesMode AccessToCompaniesMode;
     }
 
     public class AdministratorPermission {
@@ -124,6 +125,15 @@ namespace MBS.API
         public MBS.API.AdministratorPermissionMode CapacityReport;
         public MBS.API.AdministratorPermissionMode GoogleApps;
         public MBS.API.AdministratorPermissionMode Dashboard;
+        public MBS.API.AdministratorPermissionMode Downloads;
+        public MBS.API.AdministratorPermissionMode CloudRestore;
+        public MBS.API.AdministratorPermissionMode EC2Snapshots;
+        public MBS.API.AdministratorPermissionMode LicenseUsageHistory;
+        public MBS.API.AdministratorPermissionMode BackupHistory;
+        public MBS.API.AdministratorPermissionMode PurchaseHistory;
+        public MBS.API.AdministratorPermissionMode UsersCreateEdit;
+        public MBS.API.AdministratorPermissionMode UsersDelete;
+        public MBS.API.AdministratorPermissionMode ManageCompanies;
     }
 
     public class Destination1 {
@@ -142,7 +152,7 @@ namespace MBS.API
         public DateTime DateCreated;
         public string DisplayName;
         public string StorageType;
-        public MBS.API.StorageAccountDestination Destinations;
+        public MBS.API.StorageAccountDestination[] Destinations;
     }
 
     public class StorageAccountDestination {
@@ -389,6 +399,12 @@ namespace MBS.API
     {
         Version2 = 2,
         Version4 = 4
+    }
+
+    public enum AccessToCompaniesMode
+    {
+        SpecifiedCompanies,
+        AllCompanies
     }
 }
 "@

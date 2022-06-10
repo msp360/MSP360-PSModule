@@ -33,6 +33,9 @@ function New-MBSBackupPlan {
     .PARAMETER UseBlockLevelBackup
     Use block level backup.
     
+    .PARAMETER UseFastNTFSScan
+    The Fast NTFS scan speeds up backup processing by using a low-level API for accessing NTFS structures. This option is useful for NTFS volumes with a large number of files. Enabling this option automatically enables ForceUsingVSS option
+
     .PARAMETER BackupNTFSPermissions
     Backup NTFS permissions
     
@@ -74,7 +77,13 @@ function New-MBSBackupPlan {
     
     .PARAMETER BackupDirectory
     Backup directory path. Example: "c:\Work","c:\Users"
-    
+
+    .PARAMETER ExcludeFile
+    Exclude a file from backup plan. Example: "c:\temp\test2.txt","c:\temp\test2.ps1"
+
+    .PARAMETER ExcludeDirectory
+    Exclude a directory from backup plan. Example: "c:\Program Files","c:\Windows"
+
     .PARAMETER GenerateDetailedReport
     Specify to generate detailed report
     
@@ -101,7 +110,19 @@ function New-MBSBackupPlan {
     
     .PARAMETER BlockSize
     Block size. Possible values: 128, 256, 512, 1024
-    
+
+    .PARAMETER ExcludeItem
+    Exclude files/folders from Image-Based backup plan. Example: "C:\bin","C:\Users","\\?\\Volume{2b7ea38e-0854-44a9-90f8-259fe8d52d20}\Recovery"
+
+    .PARAMETER KeepBitLocker
+    Enable KeepBitLocker option for all partitions
+
+    .PARAMETER KeepBitLockerEnableForVolume
+    Enable KeepBitLocker option for volumes with specified ids. Example: "cc9eb5c7-f956-415c-b23e-e6a563f9a20e","c4f8f0d6-7a2a-4627-9c89-cc84dbe3bf79"
+
+    .PARAMETER KeepBitLockerDisableForVolume
+    Disable KeepBitLocker option for volumes with specified ids. Example: "01bc714b-b611-448e-8fff-2e0e4a0d9004","a44e3efd-17ef-4f2c-bd66-5cbda5f23939"
+
     .PARAMETER BackupVM
     Backup Virtual Machine type
     
@@ -162,11 +183,12 @@ function New-MBSBackupPlan {
         None.
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsbackupplan/
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbsbackupplan
     #>
+
     [CmdletBinding()]
     param (
         #
@@ -210,7 +232,7 @@ function New-MBSBackupPlan {
         [MBS.Agent.Plan.Schedule]
         $MSSQLTlogSchedule,
 
-        # ------------------------- Schedule -----------------------------
+        # ------------------------- Common options -----------------------------
         [Parameter(Mandatory=$true, HelpMessage="Specify plan common options. Use New-MBSBackupPlanCommonOption to create an object.", ParameterSetName='FileLevel')]
         [Parameter(Mandatory=$true, HelpMessage="Specify plan common options. Use New-MBSBackupPlanCommonOption to create an object.", ParameterSetName='ImageBased')]
         [Parameter(Mandatory=$true, HelpMessage="Specify plan common options. Use New-MBSBackupPlanCommonOption to create an object.", ParameterSetName='HyperV')]
@@ -222,8 +244,13 @@ function New-MBSBackupPlan {
         [Parameter(Mandatory=$False, HelpMessage='Use block level backup.', ParameterSetName='FileLevel')]
         [Switch]
         $UseBlockLevelBackup,
+
         # --------------------------- File Backup settings ------------
 
+        [Parameter(Mandatory=$False, HelpMessage='The Fast NTFS scan speeds up backup processing by using a low-level API for accessing NTFS structures. This option is useful for NTFS volumes with a large number of files. Enabling this option automatically enables ForceUsingVSS option', ParameterSetName='FileLevel')]
+        [Switch]
+        $UseFastNTFSScan,
+        #
         [Parameter(Mandatory=$False, HelpMessage="Backup NTFS permissions", ParameterSetName='FileLevel')]
         [Switch]
         $BackupNTFSPermissions,
@@ -280,13 +307,22 @@ function New-MBSBackupPlan {
         [string[]]
         $BackupDirectory,
         #
+        [Parameter(Mandatory=$False, HelpMessage="Exclude a file from backup plan", ParameterSetName='FileLevel')]
+        [string[]]
+        $ExcludeFile,
+        #
+        [Parameter(Mandatory=$False, HelpMessage="Exclude a directory from backup plan", ParameterSetName='FileLevel')]
+        [string[]]
+        $ExcludeDirectory,
+        #
         [Parameter(Mandatory=$False, HelpMessage='Specify to generate detailed report.', ParameterSetName='FileLevel')]
         [Parameter(Mandatory=$False, HelpMessage='Specify to generate detailed report.', ParameterSetName='MSSQL')]
         [Switch]
-        $GenerateDetailedReport,  
+        $GenerateDetailedReport,
         # ------------------------- Image-Based --------------------------------------
         [Parameter(Mandatory=$true, HelpMessage="Backup Volumes type", ParameterSetName='ImageBased')]
-        [MBS.Agent.Plan.BackupVolumeType]
+        [ValidateSet("AllVolumes", "SystemRequired", "SelectedVolumes")]
+        [string]
         $BackupVolumes,
         #
         [Parameter(Mandatory=$False, HelpMessage="Backup selected volumes with the specified ids.", ParameterSetName='ImageBased')]
@@ -317,6 +353,22 @@ function New-MBSBackupPlan {
         [ValidateSet("128", "256", "512", "1024")]
         [string]
         $BlockSize,
+        #
+        [Parameter(Mandatory=$False, HelpMessage="Exclude files/folders from Image-Based backup plan", ParameterSetName='ImageBased')]
+        [string[]]
+        $ExcludeItem,
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Enable KeepBitLocker option for all partitions', ParameterSetName='ImageBased')]
+        [switch]
+        $KeepBitLocker,
+        #
+        [Parameter(Mandatory=$False, HelpMessage="Enable KeepBitLocker option for volumes with specified ids", ParameterSetName='ImageBased')]
+        [string[]]
+        $KeepBitLockerEnableForVolume,
+        #
+        [Parameter(Mandatory=$False, HelpMessage="Disable KeepBitLocker option for volumes with specified ids", ParameterSetName='ImageBased')]
+        [string[]]
+        $KeepBitLockerDisableForVolume,
         # ------------------------- Hyper-V --------------------------------------
         [Parameter(Mandatory=$true, HelpMessage="Backup Virtual Machine type", ParameterSetName='HyperV')]
         #[ValidateSet("All", "OnlyRunning", "SelectedVM")]
@@ -370,13 +422,17 @@ function New-MBSBackupPlan {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        $CBBVersion = [version]$CBB.version
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     
@@ -398,13 +454,13 @@ function New-MBSBackupPlan {
                 dayofmonth {$ScheduleCli += " -every$prefix dayofmonth"}
                 Realtime {$ScheduleCli += " -every$prefix real-time"}
                 Default {
-                    Write-Host "Schedule frequency is not specified."
-                    Break
+                    #Write-Host "Schedule frequency is not specified."
+                    #Break
                 }
             }
             if ($Schedule.At){$ScheduleCli += " -at$prefix ""$($Schedule.At.ToString())"""}
             if ($Schedule.DayOfMonth){$ScheduleCli += " -day$prefix $($Schedule.DayOfMonth)"}
-            if ($Schedule.DayOfWeek){$ScheduleCli += " -weekday$prefix "+(($Schedule.DayOfWeek | foreach-object -Begin {$weekdaylocal = @()} -Process{$weekdaylocal += $_.ToString().Substring(0,2)} -End {return $weekdaylocal.ToLower()}) -join ",")}
+            if ($null -ne $Schedule.DayOfWeek){$ScheduleCli += " -weekday$prefix "+(($Schedule.DayOfWeek | foreach-object -Begin {$weekdaylocal = @()} -Process{$weekdaylocal += $_.ToString().Substring(0,2)} -End {return $weekdaylocal.ToLower()}) -join ",")}
             if ($Schedule.Weeknumber){$ScheduleCli += " -weeknumber$prefix $($Schedule.Weeknumber)"}
             if ($Schedule.OccursFrom){$ScheduleCli += " -dailyFrom$prefix $($Schedule.OccursFrom.ToString('hh\:mm'))"}
             if ($Schedule.OccursTo){$ScheduleCli += " -dailyTill$prefix $($Schedule.OccursTo.ToString('hh\:mm'))"}
@@ -427,9 +483,17 @@ function New-MBSBackupPlan {
         }
         function Set-Argument {
             if ($Name){$Argument += " -n ""$Name"""}
-            if($BackupPlanCommonOption.StorageClass -ne 'Standard'){
-                $Argument += " -a ""$($StorageAccount.DisplayName)"" -sc ""$($BackupPlanCommonOption.StorageClass)"""
+            if(($BackupPlanCommonOption.StorageClass -ne 'Standard') -And (-Not ($Global:MSP360ModuleSettings.SkipStorageClass))){
+                if (($BackupPlanCommonOption.StorageClass -eq 'GlacierInstantRetrieval') -And ($CBBVersion -lt [version]"7.3.1")){
+                    Write-Warning "Backup agent version is $CBBVersion. GlacierInstantRetrieval storage class is supported in version 7.3.1 or higher. Ignoring StorageClass option"
+                    $Argument += " -aid ""$($StorageAccount.ID)"""
+                }else{
+                    $Argument += " -a ""$($StorageAccount.DisplayName)"" -sc ""$($BackupPlanCommonOption.StorageClass)"""
+                }
             }else{
+                if($Global:MSP360ModuleSettings.SkipStorageClass){
+                    Write-Warning "MSP360ModuleSettings.SkipStorageClass is set. Ignoring StorageClass option"
+                }
                 $Argument += " -aid ""$($StorageAccount.ID)"""
             }
 
@@ -440,10 +504,22 @@ function New-MBSBackupPlan {
             
             
             if($BackupPlanCommonOption.SyncRepositoryBeforeRun){$Argument += " -sync yes"}#else{$Argument += " -sync no"}
-            if($BackupPlanCommonOption.UseServerSideEncryption){$Argument += " -sse yes"}else{$Argument += " -sse no"}
-            if($Null -ne $BackupPlanCommonOption.EncryptionPassword){$Argument += " -ea $($BackupPlanCommonOption.EncryptionAlgorithm)"}
-            if($BackupPlanCommonOption.EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($BackupPlanCommonOption.EncryptionPassword)))+""""}
-            if($BackupPlanCommonOption.UseCompression){$Argument += " -c yes"}else{$Argument += " -c no"}
+            if(-Not ($Global:MSP360ModuleSettings.SkipSSE)) {
+                if($BackupPlanCommonOption.UseServerSideEncryption){$Argument += " -sse yes"}else{$Argument += " -sse no"}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipSSE is set. Ignoring UseServerSideEncryption option"
+            }
+            if(-Not ($Global:MSP360ModuleSettings.SkipEncryption)) {
+                if($Null -ne $BackupPlanCommonOption.EncryptionPassword){$Argument += " -ea $($BackupPlanCommonOption.EncryptionAlgorithm)"}
+                if($BackupPlanCommonOption.EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($BackupPlanCommonOption.EncryptionPassword)))+""""}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipEncryption is set. Ignoring EncryptionPassword and EncryptionAlgorithm options"
+            }
+            if(-Not ($Global:MSP360ModuleSettings.SkipCompression)) {
+                if($BackupPlanCommonOption.UseCompression){$Argument += " -c yes"}else{$Argument += " -c no"}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipCompression is set. Ignoring UseCompression option"
+            }
             
             if($BackupPlanCommonOption.SaveBackupPlanConfiguration){
                 $Argument += " -sp yes"
@@ -453,11 +529,23 @@ function New-MBSBackupPlan {
             if($BackupPlanCommonOption.StopIfPlanRunsFor.TotalMinutes -gt 0){$Argument += " -stopAfter $( [math]::Round($BackupPlanCommonOption.StopIfPlanRunsFor.TotalHours)):$($BackupPlanCommonOption.StopIfPlanRunsFor.Minutes)"}
             if($BackupPlanCommonOption.RunMissedPlanImmediately){$Argument += " -runMissed yes"}else{$Argument += " -runMissed no"}
             if($BackupPlanCommonOption.PreActionCommand){$Argument += " -preAction $($BackupPlanCommonOption.PreActionCommand)"}
-            if($BackupPlanCommonOption.PreActionContinueAnyway){$Argument += " -pac yes"}else{$Argument += " -pac no"}
+            if($Null -ne $BackupPlanCommonOption.PreActionContinueAnyway){
+                if($BackupPlanCommonOption.PreActionContinueAnyway){
+                    $Argument += " -pac yes"
+                } else {
+                    $Argument += " -pac no"
+                }
+            }
             if($BackupPlanCommonOption.PostActionCommand){$Argument += " -postAction $($BackupPlanCommonOption.PostActionCommand)"}
-            if($BackupPlanCommonOption.PostActionRunAnyway){$Argument += " -paa yes"}else{$Argument += " -paa no"}
-            if($BackupPlanCommonOption.ResultEmailNotification){$Argument += " -notification $($BackupPlanCommonOption.ResultEmailNotification)"}
-            if($BackupPlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($BackupPlanCommonOption.AddEventToWindowsLog)"}
+            if($Null -ne $BackupPlanCommonOption.PostActionRunAnyway){
+                if($BackupPlanCommonOption.PostActionRunAnyway){
+                    $Argument += " -paa yes"
+                } else {
+                    $Argument += " -paa no"
+                }
+            }
+            if($Null -ne $BackupPlanCommonOption.ResultEmailNotification){$Argument += " -notification $($BackupPlanCommonOption.ResultEmailNotification)"}
+            if($Null -ne $BackupPlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($BackupPlanCommonOption.AddEventToWindowsLog)"}
             if($Null -ne $BackupPlanCommonOption.KeepVersionPeriod){
                 if($BackupPlanCommonOption.KeepVersionPeriod.TotalDays -gt 0){
                     $Argument += " -purge $([Math]::Round($BackupPlanCommonOption.KeepVersionPeriod.TotalDays))d"
@@ -486,8 +574,23 @@ function New-MBSBackupPlan {
                 # --------- File-Level ------------
                     #$Argument += " addBackupPlan"
                     if ($useBlockLevelBackup) {$Argument += " -useBlockLevelBackup yes"}
+                    if ($UseFastNTFSScan) {
+                        if ($CBBVersion -ge [version]"7.1.0.0") {
+                            $Argument += " -fastNtfs yes"
+                        } else {
+                            Write-Warning "Backup agent version is $CBBVersion. ""UseFastNTFSScan"" parameter requires version 7.1.0 or higher. Ignoring UseFastNTFSScan option"
+                        }
+                    } else {
+                        if ($CBBVersion -ge [version]"7.1.0.0") {
+                            $Argument += " -fastNtfs no"
+                        }
+                    }
                     if ($BackupNTFSPermissions) {$Argument += " -ntfs yes"}
-                    if ($ForceUsingVSS) {$Argument += " -vss yes"}
+                    if(-Not ($Global:MSP360ModuleSettings.SkipVSS)) {
+                        if ($ForceUsingVSS) {$Argument += " -vss yes"}else{$Argument += " -vss no"}
+                    } else {
+                        Write-Warning "MSP360ModuleSettings.SkipVSS is set. Ignoring ForceUsingVSS option"
+                    }
                     if ($UseShareReadWriteModeOnError) {$Argument += " -sharerw yes"}
                     if ($DeleteLocallyDeletedFilesAfter){$Argument += " -df $($DeleteLocallyDeletedFilesAfter.TotalDays)"}
                     if ($BackupEmptyFolders) {$Argument += " -bef yes"}
@@ -497,15 +600,27 @@ function New-MBSBackupPlan {
                     }else{
                         $Argument += " -es no"
                     }
-                    if ($SkipFolders){$Argument += " -skipf $($SkipFolders -join ',')"}
+                    if ($SkipFolder){$Argument += " -skipf ""$($SkipFolder -join ',')"""}
                     if ($IncludeFilesMask){$Argument += " -ifm $($IncludeFilesMask -join ',')"}
                     if ($ExcludeFilesMask){$Argument += " -efm $($ExcludeFilesMask -join ',')"}
                     if ($IgnoreErrorPathNotFound) {$Argument += " -iepnf yes"}
                     if ($TrackDeletedFiles) {$Argument += " -trackdeleted yes"}
-                    if ($ExcludeFile){$Argument += " -rf ""$ExcludeFile"""}
-                    if ($ExcludeDirectory){$Argument += " -rd ""$ExcludeDirectory"""}
                     if ($BackupFile){$Argument += " -f "+'"{0}"' -f ($BackupFile -join '" -f "')}
                     if ($BackupDirectory){$Argument += " -d "+'"{0}"' -f ($BackupDirectory -join '" -d "')}
+                    if ($ExcludeFile) {
+                        if ($CBBVersion -ge [version]"7.5.0") {
+                            $Argument += " -rf "+'"{0}"' -f ($ExcludeFile -join '" -rf "')
+                        }else{
+                            Write-Warning "Backup agent version is $CBBVersion. ""ExcludeFile"" parameter requires version 7.5.0 or higher. Ignoring ExcludeFile option"
+                        }
+                    }
+                    if ($ExcludeDirectory) {
+                        if ($CBBVersion -ge [version]"7.5.0") {
+                            $Argument += " -rd "+'"{0}"' -f ($ExcludeDirectory -join '" -rd "')
+                        }else{
+                            Write-Warning "Backup agent version is $CBBVersion. ""ExcludeDirectory"" parameter requires version 7.5.0 or higher. Ignoring ExcludeDirectory option"
+                        }
+                    }
                     if ($GenerateDetailedReport) {
                         $Argument += " -dr yes"
                     }else{
@@ -537,6 +652,46 @@ function New-MBSBackupPlan {
                     if ($DisableSyntheticFull) {$Argument += " -syntheticFull no"}
                     if ($prefetchBlockCount){$Argument += " -prefetchBlockCount $prefetchBlockCount"}
                     if ($blockSize){$Argument += " -blockSize $blockSize"}
+                    if ($ExcludeItem) {
+                        if ($CBBVersion -ge [version]"6.4.0") {
+                            $Argument += " -skipf "+'"{0}"' -f ($ExcludeItem -join '" -skipf "')
+                        } else {
+                            Write-Warning "Backup agent version is $CBBVersion. ""ExcludeItem"" parameter requires version 6.4.0 or higher. Ignoring ExcludeItem option"
+                        }
+                    }
+                    if ($KeepBitLocker) {
+                        if ($CBBVersion -ge [version]"7.2.2.0") {
+                            $Argument += " -keepBitlocker yes"
+                        } else {
+                            Write-Warning "Backup agent version is $CBBVersion. ""KeepBitLocker"" parameter requires version 7.2.2 or higher. Ignoring KeepBitLocker option"
+                        }
+                    #} else {
+                        #if (($CBBVersion -ge [version]"7.2.2.0") -And (-Not($KeepBitLockerEnableForVolume)) -And (-Not($KeepBitLockerDisableForVolume))) {
+                        #    $Argument += " -keepBitlocker no"
+                        #}
+                    }
+                    if ($KeepBitLockerEnableForVolume) {
+                        if ($CBBVersion -ge [version]"7.2.2.0") {
+                            if (-Not($KeepBitLocker)) {
+                                $Argument += " -keepBitlockerOn "+'"{0}"' -f ($KeepBitLockerEnableForVolume -join '" -keepBitlockerOn "')
+                            } else {
+                                Write-Warning """KeepBitLocker"" and ""KeepBitLockerEnableForVolume"" parameters are mutually exclusive. Ignoring KeepBitLockerEnableForVolume option"
+                            }
+                        }else{
+                            Write-Warning "Backup agent version is $CBBVersion. ""KeepBitLockerEnableForVolume"" parameter requires version 7.2.2 or higher. Ignoring KeepBitLockerEnableForVolume option"
+                        }
+                    }
+                    if ($KeepBitLockerDisableForVolume) {
+                        if ($CBBVersion -ge [version]"7.2.2.0") {
+                            if (-Not($KeepBitLocker)) {
+                                $Argument += " -keepBitlockerOff "+'"{0}"' -f ($KeepBitLockerDisableForVolume -join '" -keepBitlockerOff "')
+                            } else {
+                                Write-Warning """KeepBitLocker"" and ""KeepBitLockerDisableForVolume"" parameters are mutually exclusive. Ignoring KeepBitLockerDisableForVolume option"
+                            }
+                        }else{
+                            Write-Warning "Backup agent version is $CBBVersion. ""KeepBitLockerDisableForVolume"" parameter requires version 7.2.2 or higher. Ignoring KeepBitLockerDisableForVolume option"
+                        }
+                    }
                 }
                 'HyperV' { 
                     # ------------- Hyper-V -------------
@@ -552,16 +707,17 @@ function New-MBSBackupPlan {
                     # ------------- MS SQL -------------
                     #$Argument += " addBackupMSSQLPlan"
                     if ($InstanceName){$Argument += " -instancename $InstanceName"}
-                    if ($useSSL){$Argument += " -secure"}
+                    if ($useSSL){$Argument += " -secure yes"}
                     if ($useWinauth){$Argument += " -winauth yes"}
                     if ($UserName){$Argument += " -username $UserName"}
                     if ($Password){$Argument += " -password """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)))+""""}
                     switch ($BackupDB) {
-                        'All' {$Argument += " -databases All"}
-                        'User' {$Argument += " -databases User"}
-                        'SelectedDB' {$Argument += " -databases ""$($Databases -join  ";")"""}
+                        'All' {$Argument += " -dbselectiontype All"}
+                        'User' {$Argument += " -dbselectiontype User"}
+                        'SelectedDB' {$Argument += " -dbselectiontype Selected"}
                         Default {}
                     }
+                    if ($Databases){$Argument += " -databases ""$($Databases -join ";")"""}
                     if ($CopyOnly){$Argument += " -copyonly yes"}
                     if ($Verify){$Argument += " -verify yes"}
                 }

@@ -28,7 +28,7 @@ function New-MBSPlanSchedule {
     Specify day for 'dayofmonth' schedule (1..31)
     
     .PARAMETER DayOfWeek
-    Specify day(s) of week for weekly schedule or day of week for monthly schedule. Possible values: First, Second, Third, Fourth, Penultimate, Last
+    Specify day(s) of week for weekly schedule or day of week for monthly schedule. Possible values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday
     
     .PARAMETER WeekNumber
     Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last
@@ -85,11 +85,12 @@ function New-MBSPlanSchedule {
         MBS.Agent.Plan.BackupPlanCommonOption
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsplanschedule
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbsplanschedule
     #>
+
     [CmdletBinding()]
     param (
         ##
@@ -142,7 +143,7 @@ function New-MBSPlanSchedule {
         [Parameter(Mandatory=$False, HelpMessage="Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last", ParameterSetName='MonthlyWeekAt')]
         [Parameter(Mandatory=$False, HelpMessage="Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last", ParameterSetName='MonthlyWeekEvery')]
         [ValidateSet("First", "Second", "Third", "Fourth", "Penultimate", "Last")]
-        [string]
+        [MBS.Agent.Plan.WeekNumber]
         $WeekNumber,
         ##
         [Parameter(Mandatory=$False, HelpMessage="Specify daily recurring from value", ParameterSetName='DailyEvery')]
@@ -208,7 +209,7 @@ function New-MBSPlanSchedule {
         if($At){$Schedule.At = $At}
         if($DayOfMonth){$Schedule.DayOfMonth = $DayOfMonth}
         if($Null -ne $DayOfWeek){$Schedule.DayOfWeek = $DayOfWeek}
-        if($WeekNumber){$Schedule.WeekNumber = $WeekNumber}
+        if($null -ne $WeekNumber){$Schedule.WeekNumber = $WeekNumber}
         if($OccursFrom){$Schedule.OccursFrom = $OccursFrom}
         if($OccursTo){$Schedule.OccursTo = $OccursTo}
         if($OccursEvery){$Schedule.OccursEvery = $OccursEvery}

@@ -193,10 +193,10 @@ function New-MBSAPIStorageAccountSetting {
         MBS.API.StorageAccountSetting
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsapistorageaccountsetting
+        https://mspbackups.com/AP/Help/powershell/cmdlets/api/new-mbsapistorageaccountsetting
     #>
 
     [CmdletBinding()]

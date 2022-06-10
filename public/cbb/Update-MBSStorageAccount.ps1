@@ -18,10 +18,10 @@ function Update-MBSStorageAccount {
         String
 
     .NOTES
-        Author: Ivan Skorin
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/update-mbsstorageaccount/
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/update-mbsstorageaccount
     #>
     
     [CmdletBinding()]

@@ -29,7 +29,8 @@ function Get-LogFilePath {
     System.String
 
     .NOTES
-        Author: Andrew Anushin
+    Author: MSP360 Onboarding Team
+    
     .LINK
 
     #>

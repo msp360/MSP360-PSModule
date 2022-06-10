@@ -19,13 +19,13 @@ function New-MBSRestorePlan {
     Specify schedule. Use New-MBSPlanSchedule to create an object
     
     .PARAMETER RestorePlanCommonOption
-    Specify plan common options. Use New-MBSBackupPlanCommonOption to create an object
+    Specify plan common options. Use New-MBSRestorePlanCommonOption to create an object
     
     .PARAMETER BackupPrefix
     Backup prefix
     
     .PARAMETER RestorePath
-    Restore to specific location. Omit for restore to the original location. 
+    Restore to a specific location. Omit for restore to the original location. 
     
     .PARAMETER RunOnce
     Run plan once (do not save)
@@ -34,7 +34,7 @@ function New-MBSRestorePlan {
     Overwrite existing files/database
     
     .PARAMETER RestoreFromGlacier
-    Restore files located in Glacier (expedited or standard or bulk)
+    Restore objects located in S3 Glacier or Deep Archive storage classes. Possible values: Expedited, Standard, Bulk)
     
     .PARAMETER RestorePoint
     Restore type. Specify DateTime value or omit to restore the latest version.
@@ -64,7 +64,7 @@ function New-MBSRestorePlan {
     New Hyper-V machine name
 
     .PARAMETER ImportVM 
-    Import virtual machine
+    Import virtual machine after restore
     
     .PARAMETER Disk
     Backed up disk ID
@@ -91,7 +91,7 @@ function New-MBSRestorePlan {
     Set target virtual disk capacity (integer value with size specifier in KB, MB, GB, TB. It can be used for extend of the original disk capacity only. Shrinking volumes will not be performed if the value set is smaller than the original disk size.
     
     .PARAMETER InstanceName
-    Destination instance name
+    Destination MS SQL Server instance name
     
     .PARAMETER useSSL
     Use secure connection (SSL/TLS)
@@ -121,7 +121,7 @@ function New-MBSRestorePlan {
     Check if the specified account has necessary permissions to perform restore
     
     .PARAMETER SourceInstanceName
-    Source instance name
+    Source MS SQL Server instance name
     
     .PARAMETER Database
     Source database name
@@ -130,22 +130,22 @@ function New-MBSRestorePlan {
     New database name
     
     .EXAMPLE
-    PS:\> New-MBSRestorePlan -Name "Restore Image as VHD" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Disk "00000000-0000-0000-0000-000000000002" -VirtualDiskType VHDdynamic -VirtualDiskName "MyDisk" -VirtualDiskFolder "E:\Restore"
+    New-MBSRestorePlan -Name "Restore Image as VHD" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestorePlanCommonOption) -Disk "00000000-0000-0000-0000-000000000002" -VirtualDiskType VHDdynamic -VirtualDiskName "MyDisk" -VirtualDiskFolder "E:\Restore"
     
     Restore Image-Based backup as VHD dynamic file.
 
     .EXAMPLE
-    PS> New-MBSRestorePlan -Name "Restore file" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -like "*AWS S3*"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -File C:\temp\test.txt -Folder "C:\myFolder","c:\Users" -RestorePath "E:\Restore"
+    New-MBSRestorePlan -Name "Restore file" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -like "*AWS S3*"}) -RestorePlanCommonOption (New-MBSRestorePlanCommonOption) -File C:\temp\test.txt -Folder "C:\myFolder","c:\Users" -RestorePath "E:\Restore"
     
     Restore C:\temp\test.txt and C:\myFolder,c:\Users folders to E:\Restore
 
     .EXAMPLE
-    PS> New-MBSRestorePlan -Name "Restore disk" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Disk "00000000-0000-0000-0000-000000000002" -DestinationDisk "00000000-0000-0000-0000-000000000001" | Start-MBSBackupPlan
+    New-MBSRestorePlan -Name "Restore disk" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestorePlanCommonOption) -Disk "00000000-0000-0000-0000-000000000002" -DestinationDisk "00000000-0000-0000-0000-000000000001" | Start-MBSBackupPlan
 
     Create plan to restore disk with ID "00000000-0000-0000-0000-000000000002" to disk with ID "00000000-0000-0000-0000-000000000001" and start it.
 
     .EXAMPLE
-    PS> New-MBSRestorePlan -Name "Restore Hyper-V VM" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestoreCommonOptions) -Host "MyHost" -VM "Server" -NewVM "RestoredServer" -ImportVM $true | Start-MBSBackupPlan
+    New-MBSRestorePlan -Name "Restore Hyper-V VM" -StorageAccount (Get-MBSStorageAccount | where {$_.DisplayName -eq "AWS S3"}) -RestorePlanCommonOption (New-MBSRestorePlanCommonOption) -Host "MyHost" -VM "Server" -NewVM "RestoredServer" -ImportVM $true | Start-MBSBackupPlan
 
     Create plan to restore Hyper-V VM with name Server as new VM with name RestoredServer and import to Hyper-V.
 
@@ -157,10 +157,10 @@ function New-MBSRestorePlan {
     String
 
     .NOTES
-    Author: Alex Volkov
+    Author: MSP360 Onboarding Team
 
     .LINK
-    https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsrestoreplan/
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbsrestoreplan
 
     #>
     [CmdletBinding()]
@@ -182,7 +182,7 @@ function New-MBSRestorePlan {
         [MBS.Agent.Plan.Schedule]
         $Schedule,
         #
-        [Parameter(Mandatory=$true, HelpMessage="Specify plan common options. Use New-MBSBackupPlanCommonOption to create an object.")]
+        [Parameter(Mandatory=$true, HelpMessage="Specify plan common options. Use New-MBSRestorePlanCommonOption to create an object.")]
         [MBS.Agent.Plan.RestorePlanCommonOption]
         $RestorePlanCommonOption,
         #
@@ -190,8 +190,8 @@ function New-MBSRestorePlan {
         [string]
         $BackupPrefix,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Restore to specific location. Omit for restore to the original location.", ParameterSetName='FileLevel')]
-        [Parameter(Mandatory=$False, HelpMessage="Restore to specific location. Omit for restore to the original location.", ParameterSetName='HyperV')]
+        [Parameter(Mandatory=$False, HelpMessage="Restore to a specific location. Omit for restore to the original location.", ParameterSetName='FileLevel')]
+        [Parameter(Mandatory=$False, HelpMessage="Restore to a specific location. Omit for restore to the original location.", ParameterSetName='HyperV')]
         [string]
         $RestorePath,
         #
@@ -210,8 +210,8 @@ function New-MBSRestorePlan {
         [switch]
         $Overwrite,
         #
-        [Parameter(Mandatory=$false, HelpMessage="Restore files located in Glacier (expedited or standard or bulk)", ParameterSetName='FileLevel')]
-        [Parameter(Mandatory=$false, HelpMessage="Restore files located in Glacier (expedited or standard or bulk)", ParameterSetName='HyperV')]
+        [Parameter(Mandatory=$false, HelpMessage="Restore objects located in S3 Glacier or Deep Archive storage classes. Possible values: Expedited, Standard, Bulk)", ParameterSetName='FileLevel')]
+        [Parameter(Mandatory=$false, HelpMessage="Restore objects located in S3 Glacier or Deep Archive storage classes. Possible values: Expedited, Standard, Bulk)", ParameterSetName='HyperV')]
         [MBS.Agent.Plan.GlacierRestoreType]
         $RestoreFromGlacier,
         #
@@ -297,11 +297,11 @@ function New-MBSRestorePlan {
         [string]
         $VirtualDiskCapacity,
         #-------------------- MS SQL ---------------
-        [Parameter(Mandatory=$true, HelpMessage="Destination instance name", ParameterSetName='MSSQL')]
+        [Parameter(Mandatory=$true, HelpMessage="Destination MS SQL Server instance name", ParameterSetName='MSSQL')]
         [string]
         $InstanceName,
         #
-        [Parameter(Mandatory=$false, HelpMessage="Use secure connection (SSL/TLS)", ParameterSetName='ImageBased')]
+        [Parameter(Mandatory=$false, HelpMessage="Use secure connection (SSL/TLS)", ParameterSetName='MSSQL')]
         [bool]
         $useSSL,
         #
@@ -337,7 +337,7 @@ function New-MBSRestorePlan {
         [bool]
         $CheckPermissions = $true,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Source instance name", ParameterSetName='MSSQL')]
+        [Parameter(Mandatory=$False, HelpMessage="Source MS SQL Server instance name", ParameterSetName='MSSQL')]
         [string]
         $SourceInstanceName,
         #
@@ -356,13 +356,16 @@ function New-MBSRestorePlan {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     
@@ -383,13 +386,13 @@ function New-MBSRestorePlan {
                 dayofmonth {$ScheduleCli += " -every$prefix dayofmonth"}
                 Realtime {$ScheduleCli += " -every$prefix real-time"}
                 Default {
-                    Write-Host "Schedule frequency is not specified."
-                    Break
+                    #Write-Host "Schedule frequency is not specified."
+                    #Break
                 }
             }
             if ($Schedule.At){$ScheduleCli += " -at$prefix ""$($Schedule.At.ToString())"""}
             if ($Schedule.DayOfMonth){$ScheduleCli += " -day$prefix $($Schedule.DayOfMonth)"}
-            if ($Schedule.DayOfWeek){$ScheduleCli += " -weekday$prefix "+(($Schedule.DayOfWeek | foreach-object -Begin {$weekdaylocal = @()} -Process{$weekdaylocal += $_.ToString().Substring(0,2)} -End {return $weekdaylocal.ToLower()}) -join ",")}
+            if ($null -ne $Schedule.DayOfWeek){$ScheduleCli += " -weekday$prefix "+(($Schedule.DayOfWeek | foreach-object -Begin {$weekdaylocal = @()} -Process{$weekdaylocal += $_.ToString().Substring(0,2)} -End {return $weekdaylocal.ToLower()}) -join ",")}
             if ($Schedule.Weeknumber){$ScheduleCli += " -weeknumber$prefix $($Schedule.Weeknumber)"}
             if ($Schedule.OccursFrom){$ScheduleCli += " -dailyFrom$prefix $($Schedule.OccursFrom.ToString('hh\:mm'))"}
             if ($Schedule.OccursTo){$ScheduleCli += " -dailyTill$prefix $($Schedule.OccursTo.ToString('hh\:mm'))"}
@@ -428,11 +431,23 @@ function New-MBSRestorePlan {
         if($RestorePlanCommonOption.StopIfPlanRunsFor.TotalMinutes -gt 0){$Argument += " -stopAfter $( [math]::Round($RestorePlanCommonOption.StopIfPlanRunsFor.TotalHours)):$($RestorePlanCommonOption.StopIfPlanRunsFor.Minutes)"}
         if($PSCmdlet.ParameterSetName -ne "MSSQL"){
             if($RestorePlanCommonOption.PreActionCommand){$Argument += " -preAction $($RestorePlanCommonOption.PreActionCommand)"}
-            if($RestorePlanCommonOption.PreActionContinueAnyway){$Argument += " -pac yes"}else{$Argument += " -pac no"}
+            if($Null -ne $RestorePlanCommonOption.PreActionContinueAnyway){
+                if($RestorePlanCommonOption.PreActionContinueAnyway){
+                    $Argument += " -pac yes"
+                } else {
+                    $Argument += " -pac no"
+                }
+            }
             if($RestorePlanCommonOption.PostActionCommand){$Argument += " -postAction $($RestorePlanCommonOption.PostActionCommand)"}
-            if($RestorePlanCommonOption.PostActionRunAnyway){$Argument += " -paa yes"}else{$Argument += " -paa no"}
-            if($RestorePlanCommonOption.ResultEmailNotification){$Argument += " -notification $($RestorePlanCommonOption.ResultEmailNotification)"}
-            if($RestorePlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($RestorePlanCommonOption.AddEventToWindowsLog)"}
+            if($Null -ne $RestorePlanCommonOption.PostActionRunAnyway){
+                if($RestorePlanCommonOption.PostActionRunAnyway){
+                    $Argument += " -paa yes"
+                } else {
+                    $Argument += " -paa no"
+                }
+            }
+            if($Null -ne $RestorePlanCommonOption.ResultEmailNotification){$Argument += " -notification $($RestorePlanCommonOption.ResultEmailNotification)"}
+            if($Null -ne $RestorePlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($RestorePlanCommonOption.AddEventToWindowsLog)"}
         }
         if($BackupPrefix){$Argument += " -bp $BackupPrefix"}
         if($RunOnce){$Argument += " -runOnce yes"}else{$Argument += " -runOnce no"}

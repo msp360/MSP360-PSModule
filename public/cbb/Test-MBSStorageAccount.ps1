@@ -42,11 +42,12 @@ function Test-MBSStorageAccount {
         MBS.Agent.TestStorageAccountResult
 
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
 
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/test-mbsstorageaccount/
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/test-mbsstorageaccount
     #>
+
     [CmdletBinding()]
     param (
         # Storage account object

@@ -34,12 +34,12 @@ function New-MBSRecoveryDisk {
     Master password. Should be specified if configuration is protected by master password. Use -MasterPassword (ConvertTo-SecureString -string "Your_Password" -AsPlainText -Force)
     
     .EXAMPLE
-    New-MBSRecoveryUSBISO -DestinationISOPath D:\iso\MSP360Restore.iso
+    New-MBSRecoveryDisk -DestinationISOPath D:\iso\MSP360Restore.iso
 
     Create recovery ISO file with default settings.
 
     .EXAMPLE
-    New-MBSRecoveryUSBISO -DestinationUSBDrive D
+    New-MBSRecoveryDisk -DestinationUSBDrive D
 
     Create recovery USB drive with default settings.
 
@@ -53,9 +53,9 @@ function New-MBSRecoveryDisk {
     .OUTPUTS
         None.
     .NOTES
-        Author: Alex Volkov
+        Author: MSP360 Onboarding Team
     .LINK
-        https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/new-mbsplanschedule
+        https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/new-mbsrecoverydisk
     #>
 
     [CmdletBinding()]
@@ -95,13 +95,16 @@ function New-MBSRecoveryDisk {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     

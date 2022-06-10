@@ -34,11 +34,12 @@ function Get-MBSNetworkCredential {
     System.Management.Automation.PSCustomObject
 
     .NOTES
-    Author: Ivan Skorin
+    Author: MSP360 Onboarding Team
 
     .LINK
-    https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/get-mbsnetworkcredential/
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/get-mbsnetworkcredential
     #>
+
     [CmdletBinding()]
     param (
         # Parameter - Lists network credentials and performs availability test
@@ -55,12 +56,16 @@ function Get-MBSNetworkCredential {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
         }
     }
     

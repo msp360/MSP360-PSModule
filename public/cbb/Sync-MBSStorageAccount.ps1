@@ -1,7 +1,7 @@
 function Sync-MBSStorageAccount {
     <#
     .SYNOPSIS
-    Runs syncronization of the local repository with the specified storage account.
+    Runs synchronization of the local repository with the specified storage account.
     
     .DESCRIPTION
     This cmdlet allows you to synchronize the local repository with the specified storage account. The software sends a request to the storage to list all objects on it and writes down the info about them to the local repository.
@@ -10,7 +10,7 @@ function Sync-MBSStorageAccount {
     Storage account name to run the synchronization with
     
     .PARAMETER Password
-    The encryption password to syncronize encrypted filenames. Use -Password (ConvertTo-SecureString -string ""Your_Password"" -AsPlainText -Force)
+    The encryption password to synchronize encrypted filenames. Use -Password (ConvertTo-SecureString -string ""Your_Password"" -AsPlainText -Force)
     
     .PARAMETER MasterPassword
     Master password. Should be specified if configuration is protected by master password. Use -MasterPassword (ConvertTo-SecureString -string "Your_Password" -AsPlainText -Force)
@@ -18,7 +18,7 @@ function Sync-MBSStorageAccount {
     .EXAMPLE
     Sync-MBSStorageAccount -StorageAccount (Get-MBSStorageAccount -Name "FSS1")
 
-    Start sync process for the storage account with name FSS1
+    Start synchronization process for the storage account with name FSS1
     
     .INPUTS
     MBS.Agent.StorageAccount
@@ -27,11 +27,12 @@ function Sync-MBSStorageAccount {
     String
 
     .NOTES
-    Author: Ivan Skorin
+    Author: MSP360 Onboarding Team
 
     .LINK
-    https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/sync-mbsstorageaccount/
+    https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/sync-mbsstorageaccount
     #>
+
     [CmdletBinding()]
     param (
         # Parameter - Storage account
@@ -39,7 +40,7 @@ function Sync-MBSStorageAccount {
         [MBS.Agent.StorageAccount]
         $StorageAccount,
         # Parameter - Encryption password
-        [Parameter(Mandatory=$false, HelpMessage="Specify the encryption password to syncronize encrypted filenames. Use -Password (ConvertTo-SecureString -string ""Your_Password"" -AsPlainText -Force)")]
+        [Parameter(Mandatory=$false, HelpMessage="Specify the encryption password to synchronize encrypted filenames. Use -Password (ConvertTo-SecureString -string ""Your_Password"" -AsPlainText -Force)")]
         [SecureString]
         $Password,
         # Parameter - Master password
@@ -52,13 +53,16 @@ function Sync-MBSStorageAccount {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     

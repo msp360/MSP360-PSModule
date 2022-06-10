@@ -71,10 +71,10 @@ None.
 System.String[]
 
 .NOTES
-Author: Alex Volkov
+Author: MSP360 Onboarding Team
 
 .LINK
-https://kb.msp360.com/managed-backup-service/powershell-module/cmdlets/backup-agent/backup-mbsfile
+https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/backup-mbsfile
 #>
 
 function Backup-MBSFile {
@@ -158,42 +158,69 @@ function Backup-MBSFile {
         if (-not($CBB = Get-MBSAgent)) {
             Break
         }
-        try {
-            if ((Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -ne "" -and $null -ne (Get-MBSAgentSetting -ErrorAction SilentlyContinue).MasterPassword -and -not $MasterPassword) {
-                $MasterPassword = Read-Host Master Password -AsSecureString
+        $CBBVersion = [version]$CBB.version
+        if (-Not(Test-MBSAgentMasterPassword)) {
+            $MasterPassword = $null
+        } else {
+            if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                $MasterPassword = Read-Host -AsSecureString -Prompt "Master Password"
+                if (-Not(Test-MBSAgentMasterPassword -CheckMasterPassword -MasterPassword $MasterPassword)) {
+                    Write-Error "ERROR: Master password is not specified"
+                    Break
+                }
             }
-        }
-        catch {
-            
         }
     }
     
     process {
         function Set-Argument {
             $Argument = " backup"
-            if($StorageClass -ne 'Standard'){
-                $Argument += " -a ""$($StorageAccount.DisplayName)"" -sc ""$($StorageClass)"""
+            if(($StorageClass -ne 'Standard') -And (-Not ($Global:MSP360ModuleSettings.SkipStorageClass))){
+                if (($StorageClass -eq 'GlacierInstantRetrieval') -And ($CBBVersion -lt [version]"7.3.1")){
+                    Write-Warning "Backup agent version is $CBBVersion. GlacierInstantRetrieval storage class is supported in version 7.3.1 or higher. Ignoring StorageClass option"
+                    $Argument += " -aid ""$($StorageAccount.ID)"""
+                }else{
+                    $Argument += " -a ""$($StorageAccount.DisplayName)"" -sc ""$($StorageClass)"""
+                }
             }else{
+                if($Global:MSP360ModuleSettings.SkipStorageClass){
+                    Write-Warning "MSP360ModuleSettings.SkipStorageClass is set. Ignoring StorageClass option"
+                }
                 $Argument += " -aid ""$($StorageAccount.ID)"""
             }
-            
-            if($UseServerSideEncryption){$Argument += " -sse yes"}
-            if($Null -ne $EncryptionPassword){$Argument += " -ea $($EncryptionAlgorithm)"}
-            if($EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($EncryptionPassword)))+""""}
-            if($UseCompression){$Argument += " -c yes"}
+            if(-Not ($Global:MSP360ModuleSettings.SkipSSE)) {
+                if($UseServerSideEncryption){$Argument += " -sse yes"}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipSSE is set. Ignoring UseServerSideEncryption option"
+            }
+            if(-Not ($Global:MSP360ModuleSettings.SkipEncryption)) {
+                if($Null -ne $EncryptionPassword){$Argument += " -ea $($EncryptionAlgorithm)"}
+                if($EncryptionPassword){$Argument += " -ep """+([System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($EncryptionPassword)))+""""}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipEncryption is set. Ignoring EncryptionPassword and EncryptionAlgorithm options"
+            }
+            if(-Not ($Global:MSP360ModuleSettings.SkipCompression)) {
+                if($UseCompression){$Argument += " -c yes"}
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipCompression is set. Ignoring UseCompression option"
+            }
 
             if ($UseFastNTFSScan) {$Argument += " -fastntfs yes"}
-            if ($ForceUsingVSS) {
-                if((New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
-                    $Argument += " -vss yes"
-                }else{
-                    $Argument += " -vss no"
-                    if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                        $ReturnArray += "WARNING: Run cmdlet with admin permissions to use the ForceUsingVSS parameter. The parameter is skipped."
+            if(-Not ($Global:MSP360ModuleSettings.SkipVSS)) {
+                if ($ForceUsingVSS) {
+                    if((New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+                        $Argument += " -vss yes"
                     }else{
-                        Write-host "WARNING: Run cmdlet with admin permissions to use the ForceUsingVSS parameter. The parameter is skipped." -ForegroundColor DarkYellow
+                        $Argument += " -vss no"
+                        if($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
+                            $ReturnArray += "WARNING: Run cmdlet with admin permissions to use the ForceUsingVSS parameter. The parameter is skipped."
+                        }else{
+                            Write-host "WARNING: Run cmdlet with admin permissions to use the ForceUsingVSS parameter. The parameter is skipped." -ForegroundColor DarkYellow
+                        }
                     }
                 }
+            } else {
+                Write-Warning "MSP360ModuleSettings.SkipVSS is set. Ignoring ForceUsingVSS option"
             }
             if ($UseShareReadWriteModeOnError) {$Argument += " -sharerw yes"}
             if ($BackupEmptyFolders) {$Argument += " -bef yes"}
