@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '2.24.0'
+    ModuleVersion = '2.40.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -48,24 +48,17 @@
 
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
-- Critical bugfix:
-    - Cannot update MSP360 PowerShell Module to version 2.x from older versions (Error: Authenticode issuer ... of the new module 'msp360' with version '2.21.143' ... is not matching with the authenticode issuer ... of the previously-installed module 'msp360' with version '1.x')
 - New cmdlets:
-    - Install-CONAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/connect-agent/install-conagent)
-    - Get-CONAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/connect-agent/get-conagent)
-    - Remove-CONAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/connect-agent/remove-conagent)
-    - Install-RMMAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/rmm-agent/install-rmmagent)
-    - Get-RMMAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/rmm-agent/get-rmmagent)
-    - Remove-RMMAgent (https://mspbackups.com/AP/Help/powershell/cmdlets/rmm-agent/remove-rmmagent)
+    - Start-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/start-mbsagentservice)
+    - Restart-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/restart-mbsagentservice)
+    - Stop-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/stop-mbsagentservice)
 - Enhancement:
-    - Install-MSP360Module: -CleanInstall switch to remove all previous versions of the module before install or update to the latest or requested version
-    - New-MBSBackupPlan, New-MBSNBFIBBBackupPlan: added -KeepBitLocker, -KeepBitLockerEnableForVolume, and -KeepBitLockerDisableForVolume parameters
-    - Edit-MBSBackupPlan: added -KeepBitLockerEnableForVolume and -KeepBitLockerDisableForVolume parameters
-    - New-MBSNBFIBBBackupPlan: added 'FixedVolumes' value for -BackupVolumes parameter
-    - Get-MBSBackupPlan: added output of 'BackupOptions' for volumes in NBF Image-Based backup plans
-    - New-MBSBackupPlan, New-MBSNBFIBBBackupPlan: added -ExcludeItem parameter for Image-Based backup plans
-    - New-MBSBackupPlan: added -ExcludeFile and -ExcludeDirectory parameters for File-Level backup plans
-    - Edit-MBSBackupPlan: added -DisableExcludeFilesFolders switch to remove and disable exclusions for Image-Based backup plans
+    - New-MBSAPICompany, Get-MBSAPICompany, Edit-MBSAPICompany: added company backup destination ID parameter and output
+    - New-MBSAPIAdministrator, Get-MBSAPIAdministrator, Edit-MBSAPIAdministrator: added AccountType parameter and output (this value is intended for future RBAC)
+    - New-MBSAPIAdministratorPermission: added -ManageImmutability parameter
+    - New-MBSNBFPlanSchedule: removed -Once switch (once frequency not supported in NBF)
+    - New-MBSNBFPlanSchedule: added -RepeatInterval and -RepeatStartDate parameters (MBS Backup Agent 7.5 release)
+    - Test-MBSConnection: suppress warning messages if TCP test succeeded, but ICMP ping failed
 "@
         }
     }

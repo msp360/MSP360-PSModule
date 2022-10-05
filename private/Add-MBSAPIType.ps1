@@ -51,6 +51,11 @@ namespace MBS.API
         public string Name;
         public long StorageLimit;
         public string LicenseSettings;
+        public MBS.API.CompanyDestination[] Destinations;
+    }
+
+    public class CompanyDestination {
+        public string DestinationId;
     }
 
     public class Build {
@@ -100,6 +105,7 @@ namespace MBS.API
         public DateTime DateCreated;
         public string[] Companies;
         public MBS.API.AccessToCompaniesMode AccessToCompaniesMode;
+        public MBS.API.AdministratorAccountType AccountType;
     }
 
     public class AdministratorPermission {
@@ -134,6 +140,7 @@ namespace MBS.API
         public MBS.API.AdministratorPermissionMode UsersCreateEdit;
         public MBS.API.AdministratorPermissionMode UsersDelete;
         public MBS.API.AdministratorPermissionMode ManageCompanies;
+        public MBS.API.AdministratorPermissionMode ManageImmutability;
     }
 
     public class Destination1 {
@@ -405,6 +412,13 @@ namespace MBS.API
     {
         SpecifiedCompanies,
         AllCompanies
+    }
+
+    public enum AdministratorAccountType
+    {
+        Undefined,
+        InternalAccount,
+        ExternalAccount
     }
 }
 "@

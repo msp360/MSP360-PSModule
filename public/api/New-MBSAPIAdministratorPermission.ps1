@@ -99,6 +99,9 @@ function New-MBSAPIAdministratorPermission {
     .PARAMETER ManageCompanies
     Allowed to Manage companies
 
+    .PARAMETER ManageImmutability
+    Allowed to Manage immutability
+
     .PARAMETER EnableUndefinedPermissions
     If set, all undefined permissions will be enabled (by default, undefined permissions are disabled)
     
@@ -226,6 +229,9 @@ function New-MBSAPIAdministratorPermission {
         [Parameter(Mandatory=$false, HelpMessage="Allowed to Manage companies")]
         [MBS.API.AdministratorPermissionMode]$ManageCompanies,
         #
+        [Parameter(Mandatory=$false, HelpMessage="Allowed to Manage immutability")]
+        [MBS.API.AdministratorPermissionMode]$ManageImmutability,
+        #
         [Parameter(Mandatory=$false, HelpMessage="If set, all undefined permissions will be enabled (by default, undefined permissions are disabled)")]
         [switch]$EnableUndefinedPermissions
     )
@@ -274,6 +280,7 @@ function New-MBSAPIAdministratorPermission {
         if($null -ne $UsersCreateEdit) {$AdministratorPermissions.UsersCreateEdit = $UsersCreateEdit}
         if($null -ne $UsersDelete) {$AdministratorPermissions.UsersDelete = $UsersDelete}
         if($null -ne $ManageCompanies) {$AdministratorPermissions.ManageCompanies = $ManageCompanies}
+        if($null -ne $ManageImmutability) {$AdministratorPermissions.ManageImmutability = $ManageImmutability}
 
         return $AdministratorPermissions
     }

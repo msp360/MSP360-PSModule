@@ -38,7 +38,13 @@ function New-MBSNBFPlanSchedule {
     
     .PARAMETER OccursEvery
     Specify recurring period value. Possible values: 1-59 min, or 1-180 hour
+
+    .PARAMETER RepeatInterval
+    Specify repeat period value (days). Possible values: 1..31
     
+    .PARAMETER RepeatStartDate
+    Specify start date of repetitions
+
     .EXAMPLE
     New-MBSNBFPlanSchedule -Incremental -Once -At 10:00
     
@@ -91,47 +97,47 @@ function New-MBSNBFPlanSchedule {
     [CmdletBinding()]
     param (
         ##
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='Once')]
+        #[Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='Once')]
         [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='DailyAt')]
         [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='DailyEvery')]
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='MonthlyWeekAt')]
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='MonthlyDayAt')]
         [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='WeeklyAt')]
         [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='WeeklyEvery')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='MonthlyDayAt')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure incremental backup schedule", ParameterSetName='MonthlyWeekAt')]
         [switch]
         $Incremental,
         ##
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='Daily')]
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='Weekly')]
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='MonthlyDay')]
-        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='MonthlyWeek')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='DailyFull')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='WeeklyFull')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='MonthlyDayFull')]
+        [Parameter(Mandatory=$true, HelpMessage="Use to configure full backup schedule", ParameterSetName='MonthlyWeekFull')]
         [switch]
         $Full,
         ##
-        [Parameter(Mandatory=$False, HelpMessage="Run once", ParameterSetName='Once')]
-        [switch]
-        $Once,
+        #[Parameter(Mandatory=$False, HelpMessage="Run once", ParameterSetName='Once')]
+        #[switch]
+        #$Once,
         ##
         [Parameter(Mandatory=$False, HelpMessage="Run daily at specific time", ParameterSetName='DailyAt')]
         [Parameter(Mandatory=$False, HelpMessage="Run daily from/till specific time every specific min/hour", ParameterSetName='DailyEvery')]
-        [Parameter(Mandatory=$False, HelpMessage="Run daily from/till specific time every specific min/hour", ParameterSetName='Daily')]
+        [Parameter(Mandatory=$False, HelpMessage="Run daily from/till specific time every specific min/hour", ParameterSetName='DailyFull')]
         [switch]
         $Daily,
         ##
         [Parameter(Mandatory=$False, HelpMessage="Run weekly at specific time", ParameterSetName='WeeklyAt')]
         [Parameter(Mandatory=$False, HelpMessage="Run weekly from/till specific time every specific min/hour", ParameterSetName='WeeklyEvery')]
-        [Parameter(Mandatory=$False, HelpMessage="Run weekly from/till specific time every specific min/hour", ParameterSetName='Weekly')]
+        [Parameter(Mandatory=$False, HelpMessage="Run weekly from/till specific time every specific min/hour", ParameterSetName='WeeklyFull')]
         [switch]
         $Weekly,
         ##
-        [Parameter(Mandatory=$False, HelpMessage="Run monthly at specific time", ParameterSetName='MonthlyDayAt')]
-        [Parameter(Mandatory=$False, HelpMessage="Run monthly on specific day", ParameterSetName='MonthlyDay')]
         [Parameter(Mandatory=$False, HelpMessage="Run monthly at specific time", ParameterSetName='MonthlyWeekAt')]
-        [Parameter(Mandatory=$False, HelpMessage="Run monthly on specific weekday", ParameterSetName='MonthlyWeek')]
+        [Parameter(Mandatory=$False, HelpMessage="Run monthly on specific weekday", ParameterSetName='MonthlyWeekFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Run monthly at specific time", ParameterSetName='MonthlyDayAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Run monthly on specific day", ParameterSetName='MonthlyDayFull')]
         [switch]
         $Monthly,
         ##
-        [Parameter(Mandatory=$true, HelpMessage="Specify datetime. Example -at ""06/09/19 7:43 AM""", ParameterSetName='Once')]
+        #[Parameter(Mandatory=$true, HelpMessage="Specify datetime. Example -at ""06/09/19 7:43 AM""", ParameterSetName='Once')]
         [Parameter(Mandatory=$true, HelpMessage="Specify time of schedule. Example -at ""7:43 AM""", ParameterSetName='DailyAt')]
         [Parameter(Mandatory=$true, HelpMessage="Specify time of schedule. Example -at ""7:43 AM""", ParameterSetName='WeeklyAt')]
         [Parameter(Mandatory=$true, HelpMessage="Specify time of schedule. Example -at ""7:43 AM""", ParameterSetName='MonthlyWeekAt')]
@@ -140,20 +146,20 @@ function New-MBSNBFPlanSchedule {
         $At,
         ##
         [Parameter(Mandatory=$true, HelpMessage="Specify day for 'dayofmonth' schedule (1..31)", ParameterSetName='MonthlyDayAt')]
-        [Parameter(Mandatory=$true, HelpMessage="Specify day for 'dayofmonth' schedule (1..31)", ParameterSetName='MonthlyDay')]
+        [Parameter(Mandatory=$true, HelpMessage="Specify day for 'dayofmonth' schedule (1..31)", ParameterSetName='MonthlyDayFull')]
         [Int32][ValidateRange(1,31)]
         $DayOfMonth,
         ##
-        [Parameter(Mandatory=$true, HelpMessage="Specify day(s) of week for weekly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='Weekly')]
+        [Parameter(Mandatory=$true, HelpMessage="Specify day(s) of week for weekly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='WeeklyFull')]
         [Parameter(Mandatory=$true, HelpMessage="Specify day(s) of week for weekly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='WeeklyAt')]
         [Parameter(Mandatory=$true, HelpMessage="Specify day(s) of week for weekly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='WeeklyEvery')]
-        [Parameter(Mandatory=$true, HelpMessage="Specify day of week for monthly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='MonthlyWeek')]
+        [Parameter(Mandatory=$true, HelpMessage="Specify day of week for monthly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='MonthlyWeekFull')]
         [Parameter(Mandatory=$true, HelpMessage="Specify day of week for monthly schedule. Example: ""Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday""", ParameterSetName='MonthlyWeekAt')]
         [System.DayOfWeek[]]
         $DayOfWeek,
         ##
         [Parameter(Mandatory=$true, HelpMessage="Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last", ParameterSetName='MonthlyWeekAt')]
-        [Parameter(Mandatory=$true, HelpMessage="Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last", ParameterSetName='MonthlyWeek')]
+        [Parameter(Mandatory=$true, HelpMessage="Specify number of week. Possible values: First, Second, Third, Fourth, Penultimate, Last", ParameterSetName='MonthlyWeekFull')]
         [ValidateSet("First", "Second", "Third", "Fourth", "Penultimate", "Last")]
         [MBS.Agent.Plan.WeekNumber]
         $WeekNumber,
@@ -173,7 +179,33 @@ function New-MBSNBFPlanSchedule {
         [Parameter(Mandatory=$true, HelpMessage="Specify recurring period value. Possible values: 1-59 min, or 1-180 hour", ParameterSetName='DailyEvery')]
         [Parameter(Mandatory=$true, HelpMessage="Specify recurring period value. Possible values: 1-59 min, or 1-180 hour", ParameterSetName='WeeklyEvery')]
         [timespan]
-        $OccursEvery
+        $OccursEvery,
+        ##
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (days). Possible values: 1..31", ParameterSetName='DailyAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (days). Possible values: 1..31", ParameterSetName='DailyEvery')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (days). Possible values: 1..31", ParameterSetName='DailyFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (weeks). Possible values: 1..31", ParameterSetName='WeeklyAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (weeks). Possible values: 1..31", ParameterSetName='WeeklyEvery')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (weeks). Possible values: 1..31", ParameterSetName='WeeklyFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (months). Possible values: 1..31", ParameterSetName='MonthlyDayAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (months). Possible values: 1..31", ParameterSetName='MonthlyDayFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (months). Possible values: 1..31", ParameterSetName='MonthlyWeekAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify repeat period value (months). Possible values: 1..31", ParameterSetName='MonthlyWeekFull')]
+        [Int32][ValidateRange(1,31)]
+        $RepeatInterval,
+        ##
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='DailyAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='DailyEvery')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='DailyFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='WeeklyAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='WeeklyEvery')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='WeeklyFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='MonthlyDayAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='MonthlyDayFull')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='MonthlyWeekAt')]
+        [Parameter(Mandatory=$False, HelpMessage="Specify start date of repetitions", ParameterSetName='MonthlyWeekFull')]
+        [DateTime]
+        $RepeatStartDate
     )
     
     begin {
@@ -186,11 +218,11 @@ function New-MBSNBFPlanSchedule {
         }else {
             $Schedule = New-Object -TypeName MBS.Agent.Plan.NBFFullSchedule
         }
-        if($Once){$Schedule.Frequency = 'Once'}
+        #if($Once){$Schedule.Frequency = 'Once'}
         if($Daily){$Schedule.Frequency = 'Daily'}
         if($Weekly){$Schedule.Frequency = 'Weekly'}
         if($Monthly -and -not $DayOfMonth){$Schedule.Frequency = 'Monthly'}
-        if($Monthly -and $DayOfMonth){$Schedule.Frequency = 'DayofMonth'}
+        if($Monthly -and $DayOfMonth){$Schedule.Frequency = 'DayOfMonth'}
         if($At){$Schedule.At = $At}
         if($DayOfMonth){$Schedule.DayOfMonth = $DayOfMonth}
         if($Null -ne $DayOfWeek){$Schedule.DayOfWeek = $DayOfWeek}
@@ -198,6 +230,8 @@ function New-MBSNBFPlanSchedule {
         if($OccursFrom){$Schedule.OccursFrom = $OccursFrom}
         if($OccursTo){$Schedule.OccursTo = $OccursTo}
         if($OccursEvery){$Schedule.OccursEvery = $OccursEvery}
+        if($RepeatInterval){$Schedule.RepeatInterval = $RepeatInterval}
+        if($RepeatStartDate){$Schedule.RepeatStartDate = $RepeatStartDate}
 
         return $Schedule
     }

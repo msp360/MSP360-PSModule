@@ -184,7 +184,6 @@ function New-MBSNBFBackupPlanCommonOption {
         $BackupPlanOption = New-Object -TypeName MBS.Agent.Plan.NBFBackupPlanCommonOption
         $BackupPlanOption.SyncRepositoryBeforeRun = $SyncRepositoryBeforeRun
         $BackupPlanOption.UseServerSideEncryption = $UseServerSideEncryption
-        $BackupPlanOption.UseServerSideEncryption = $UseServerSideEncryption
         $BackupPlanOption.EncryptionAlgorithm = $EncryptionAlgorithm
         $BackupPlanOption.EncryptionPassword = $EncryptionPassword
         $BackupPlanOption.UseCompression = $UseCompression

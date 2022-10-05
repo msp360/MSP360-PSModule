@@ -192,6 +192,8 @@ namespace MBS.Agent.Plan
         public TimeSpan OccursFrom;
         public TimeSpan OccursTo;
         public TimeSpan OccursEvery;
+        public int RepeatInterval;
+        public DateTime RepeatStartDate;
     }
 
     public class NBFFullSchedule {
@@ -199,6 +201,8 @@ namespace MBS.Agent.Plan
         public int DayOfMonth;
         public System.DayOfWeek[] DayOfWeek;
         public Nullable<MBS.Agent.Plan.WeekNumber> WeekNumber;
+        public int RepeatInterval;
+        public DateTime RepeatStartDate;
     }
 
     public class RestorePlanCommonOption {
@@ -334,7 +338,6 @@ namespace MBS.Agent.Plan
 
     public enum NBFScheduleFrequency
     {
-        Once,
         Daily,
         Weekly,
         Monthly,

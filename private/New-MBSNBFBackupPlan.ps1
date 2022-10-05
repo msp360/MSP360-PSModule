@@ -79,6 +79,20 @@ function New-MBSNBFBackupPlan {
                     }
                 }
             }
+            if ($Schedule.RepeatInterval) {
+                if ($CBBVersion -ge [version]"7.5.0.80") {
+                    $ScheduleCli += " -repeatEvery$prefix $($Schedule.RepeatInterval)"
+                } else {
+                    Write-Warning "Backup agent version is $CBBVersion. ""RepeatInterval"" parameter requires version 7.5.0.80 or higher. Ignoring RepeatInterval option"
+                }
+            }
+            if ($Schedule.RepeatStartDate) {
+                if ($CBBVersion -ge [version]"7.5.0.80") {
+                    $ScheduleCli += " -repeatStartDate$prefix ""$($Schedule.RepeatStartDate.ToString())"""
+                } else {
+                    Write-Warning "Backup agent version is $CBBVersion. ""RepeatStartDate"" parameter requires version 7.5.0.80 or higher. Ignoring RepeatStartDate option"
+                }
+            }
 
             return $Schedulecli
 
