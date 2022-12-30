@@ -12,6 +12,9 @@ function Set-MSP360ModuleSettings {
     .PARAMETER CBBProgramData
         Path to Online Backup's configuration folder. Used by Get-MBSAgent cmdlet to skip registry checks. Takes effect only if CBBPath is also specified.
 
+    .PARAMETER SkipEngineSettingsListCheck
+        Skip check for "enginesettings.list" file and set the program data folder path with the default value or specified in the CBBProgramData parameter
+
     .PARAMETER SkipCompression
         Ignore compression option in New-MBSBackupPlan, Edit-MBSBackupPlan, New-MBSNBFFileBackupPlan, New-MBSNBFIBBBackupPlan cmdlets
 
@@ -55,6 +58,10 @@ function Set-MSP360ModuleSettings {
         [string]
 	    $CBBProgramData,
         #
+        [Parameter(Mandatory=$false, HelpMessage="Skip check for ""enginesettings.list"" file and set the program data folder path with the default value or specified in the CBBProgramData parameter")]
+        [boolean]
+        $SkipEngineSettingsListCheck=$false,
+        #
         [Parameter(Mandatory=$false, HelpMessage="Ignore compression option in New-MBSBackupPlan, Edit-MBSBackupPlan, New-MBSNBFFileBackupPlan, New-MBSNBFIBBBackupPlan cmdlets")]
         [boolean]
         $SkipCompression=$false,
@@ -84,6 +91,7 @@ function Set-MSP360ModuleSettings {
         $Global:MSP360ModuleSettings = New-Object -Typename MBS.PSModule.Settings
         $Global:MSP360ModuleSettings.CBBPath = $CBBPath
         $Global:MSP360ModuleSettings.CBBProgramData = $CBBProgramData
+        $Global:MSP360ModuleSettings.SkipEngineSettingsListCheck = $SkipEngineSettingsListCheck
         $Global:MSP360ModuleSettings.SkipCompression = $SkipCompression
         $Global:MSP360ModuleSettings.SkipEncryption = $SkipEncryption
         $Global:MSP360ModuleSettings.SkipStorageClass = $SkipStorageClass

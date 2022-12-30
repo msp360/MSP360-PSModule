@@ -45,15 +45,15 @@ function Remove-CONAgent {
             $Arguments = "/S"
             if ($Force){
                 (Start-MBSProcess -CMDPath $CONN.UninstallString -CMDArguments $Arguments).stdout
-                Write-Host "The Connect agent has been uninstalled."            
+                return "The Connect agent has been uninstalled."            
             }else{
                 if (Confirm-MBSAction -Operation "Remove-CONAgent" -Target "Connect agent"){
                     (Start-MBSProcess -CMDPath $CONN.UninstallString -CMDArguments $Arguments).stdout
-                    Write-Host "The Connect agent has been uninstalled."
+                    return "The Connect agent has been uninstalled."
                 }
             }
         }else{
-            Write-Host "Cannot find the Connect agent."
+            return "Cannot find the Connect agent."
         }
     }
     

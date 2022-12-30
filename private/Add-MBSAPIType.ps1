@@ -58,15 +58,15 @@ namespace MBS.API
         public string DestinationId;
     }
 
-    public class Build {
+    public class BuildModels {
         public string Type;
         public string Version;
         public string DownloadLink;
     }
 
-    public class BuildEdition {
-        public MBS.API.BuildEditionType Type;
-        public string Version;
+    public class RequestBuilds {
+        public MBS.API.BuildEdition[] Editions;
+        public MBS.API.BuildType Type;
     }
 
     public class Monitoring {
@@ -316,7 +316,7 @@ namespace MBS.API
         CompanyLicensesPool
     }
 
-    public enum BuildEditionType
+    public enum BuildEdition
     {
         Windows,
         VirtualMachine,
@@ -324,6 +324,12 @@ namespace MBS.API
         LinuxDeb,
         LinuxRpm,
         DedupServer
+    }
+
+    public enum BuildType
+    {
+        Custom,
+        Sandbox
     }
 
     public enum MonitoringPlanType

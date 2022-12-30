@@ -65,9 +65,7 @@ function Install-CONAgent {
             (New-Object Net.WebClient).DownloadFile("$URL", "$TempPath\$TempFolder\$FileName")
             (Start-MBSProcess -CMDPath "$TempPath\$TempFolder\$FileName" -CMDArguments "$Arguments").stdout
             Remove-Item -Path "$TempPath\$TempFolder" -Force -Recurse
-        }
-        else
-        {
+        }else{
             return "The Connect agent is already installed."
         }
     }

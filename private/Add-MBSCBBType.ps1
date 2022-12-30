@@ -536,6 +536,7 @@ namespace MBS.PSModule
     {
         public string CBBPath;
         public string CBBProgramData;
+        public bool SkipEngineSettingsListCheck;
         public bool SkipCompression;
         public bool SkipEncryption;
         public bool SkipStorageClass;

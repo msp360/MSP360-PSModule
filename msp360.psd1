@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '2.40.0'
+    ModuleVersion = '2.53.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -48,17 +48,21 @@
 
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
-- New cmdlets:
-    - Start-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/start-mbsagentservice)
-    - Restart-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/restart-mbsagentservice)
-    - Stop-MBSAgentService (https://mspbackups.com/AP/Help/powershell/cmdlets/tools/stop-mbsagentservice)
+- Bugfix:
+    - Get-MBSBackupPlan: NBF plans - incorrect frequency is set if 'DayOfWeek' includes all days and the initial frequency is not 'Weekly'
+    - Get-MBSBackupPlan: NBF plans - 'DayOfWeek' for monthly incremental schedule is not set
+    - Get-MBSBackupPlan: NBF plans - 'DayOfMonth' value is not set if frequency is 'DayOfMonth'
+    - Get-MBSBackupPlan: NBF plans - 'RepeatInterval' and 'RepeatStartDate' are not set
 - Enhancement:
-    - New-MBSAPICompany, Get-MBSAPICompany, Edit-MBSAPICompany: added company backup destination ID parameter and output
-    - New-MBSAPIAdministrator, Get-MBSAPIAdministrator, Edit-MBSAPIAdministrator: added AccountType parameter and output (this value is intended for future RBAC)
-    - New-MBSAPIAdministratorPermission: added -ManageImmutability parameter
-    - New-MBSNBFPlanSchedule: removed -Once switch (once frequency not supported in NBF)
-    - New-MBSNBFPlanSchedule: added -RepeatInterval and -RepeatStartDate parameters (MBS Backup Agent 7.5 release)
-    - Test-MBSConnection: suppress warning messages if TCP test succeeded, but ICMP ping failed
+    - Get-MBSBackupPlan: RAW output type now returns NBF backup plans in their source (not converted) format in the same form as CBF backup plans
+    - Edit-MBSBackupPlan: adding and disabling file/folder exclusions for Image-Based backup plans improvements (MBS Backup Agent release 7.8.2)
+    - Stop-MBSPlan: force stop improvements (MBS Backup Agent release 7.8.2)
+    - Get-MBSAgentSetting, Get-MBSStorageAccount: added checks for cases when 'enginesettings.list' is empty, corrupt or incorrect format
+    - Get-MBSAPIBuild: added RMM build type
+    - Get-MBSAPIBuild: renamed build type values for convenience. Possible values - 'Windows','VMEdition','LinuxDEB','LinuxRPM','macOS','RMM'
+    - Request-MBSAPIBuild: introduced enums for -BuildType and -BuildEditions parameters
+    - Remove-MBSAgent, Remove-CONAgent, Remove-RMMAgent: output message improvements
+    - Set-MSP360ModuleSettings: added -SkipEngineSettingsListCheck parameter for cases when some cmdlets do not work properly if 'enginesettings.list' is not present (e.g. after MBS Backup Agent clean install, before assigning a backup user)
 "@
         }
     }
