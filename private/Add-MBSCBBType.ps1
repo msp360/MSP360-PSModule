@@ -37,12 +37,15 @@ namespace MBS.Agent.Plan
         public Nullable<bool> PreActionContinueAnyway;
         public string PostActionCommand;
         public Nullable<bool> PostActionRunAnyway;
+        public string BackupChainPlanID;
+        public Nullable<bool> BackupChainExecuteOnlyAfterSuccess;
+        public Nullable<bool> BackupChainExecuteForceFull;
         public MBS.Agent.Plan.Notification ResultEmailNotification;
         public MBS.Agent.Plan.Notification AddEventToWindowsLog;
-        public Nullable<TimeSpan> KeepVersionPeriod;
+        public Nullable<int> KeepVersionPeriod;
         public Nullable<int> KeepNumberOfVersion;
         public bool KeepLastVersion;
-        public Nullable<TimeSpan> DelayPurgePeriod;
+        public Nullable<int> DelayPurgePeriod;
     }
 
     public class NBFBackupPlanCommonOption {
@@ -59,13 +62,18 @@ namespace MBS.Agent.Plan
         public Nullable<bool> PreActionContinueAnyway;
         public string PostActionCommand;
         public Nullable<bool> PostActionRunAnyway;
+        public string BackupChainPlanID;
+        public Nullable<bool> BackupChainExecuteOnlyAfterSuccess;
+        public Nullable<bool> BackupChainExecuteForceFull;
         public MBS.Agent.Plan.Notification ResultEmailNotification;
         public MBS.Agent.Plan.Notification AddEventToWindowsLog;
-        public Nullable<TimeSpan> KeepVersionPeriod;
+        public int KeepVersionPeriod;
         public int GFSKeepWeekly;
         public int GFSKeepMonthly;
         public int GFSKeepYearly;
         public MBS.Agent.Plan.Month GFSMonthOfTheYear;
+        public bool ForeverForwardIncremental;
+        public bool IntelligentRetention;
     }
 
     public class FileLevelBackupPlan : BackupPlan{
@@ -95,6 +103,7 @@ namespace MBS.Agent.Plan
         public bool BackupNTFSPermissions;
         public bool FastNTFSScan;
         public bool ForceUsingVSS;
+        public bool KeepEFSEncryption;
         public bool UseShareReadWriteModeOnError;
         public bool BackupEmptyFolders;
         public string BackupOnlyAfter;

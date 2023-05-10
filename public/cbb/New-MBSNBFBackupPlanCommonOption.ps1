@@ -33,6 +33,9 @@ function New-MBSNBFBackupPlanCommonOption {
     .PARAMETER RunMissedPlanImmediately
     Run missed scheduled backup immediately when computer starts up.
     
+    .PARAMETER ForeverForwardIncremental
+    Enables Forever Forward Incremental backup
+
     .PARAMETER PreActionCommand
     Specify command to be executed before backup completes
     
@@ -44,7 +47,16 @@ function New-MBSNBFBackupPlanCommonOption {
     
     .PARAMETER PostActionRunAnyway
     Specify to execute post-backup action in any case (regardless the backup result).
-    
+
+    .PARAMETER BackupChainPlanID
+    Specify chained plan ID. Use (Get-MBSBackupPlan | Where-Object Name -eq 'Backup plans name').ID or (Get-MBSRestorePlan | Where-Object Name -eq 'Backup plan name').ID
+
+    .PARAMETER BackupChainExecuteOnlyAfterSuccess
+    Specify to execute the chained plan only if the current plan is completed successfully ($true) or always ($false)
+
+    .PARAMETER BackupChainExecuteForceFull
+    Specify to force full backup for the chained plan
+
     .PARAMETER ResultEmailNotification
     Specify to send backup plan result notification email when backup fails (errorOnly) or in all cases (on). Prior to turn on the notification settings must be configured.
     
@@ -52,22 +64,25 @@ function New-MBSNBFBackupPlanCommonOption {
     Specify to add entry to Windows Event Log when backup fails (errorOnly) or in all cases (on).
     
     .PARAMETER KeepVersionPeriod
-    Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180. .
+    Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180
     
     .PARAMETER GFSKeepWeekly
-    Enables GFS weekly storage type. Example: -KeepVersionPeriod 4.
+    Enables GFS weekly storage type. Example: -KeepVersionPeriod 4
     
     .PARAMETER GFSKeepMonthly
-    Enables GFS monthly storage type. Example: -KeepVersionPeriod 12.
+    Enables GFS monthly storage type. Example: -KeepVersionPeriod 12
     
     .PARAMETER GFSKeepYearly
-    Enables GFS yearly storage type. Example: -KeepVersionPeriod 5.
+    Enables GFS yearly storage type. Example: -KeepVersionPeriod 5
     
     .PARAMETER GFSMonthOfTheYear
-    Specify the number of month for the first successful GFS full backup for yearly storage type. Example: -GFSMonthOfTheYear February 
+    Specify the number of month for the first successful GFS full backup for yearly storage type. Example: -GFSMonthOfTheYear February
+
+    .PARAMETER IntelligentRetention
+    Enables Intelligent Retention for Forever Forward Incremental
 
     .EXAMPLE
-    $CommonOptions = New-NBFBackupPlanCommonOption -SyncRepositoryBeforeRun $true -UseServerSideEncryption $true -EncryptionAlgorithm AES256 -EncryptionPassword (ConvertTo-SecureString -string "My_Password" -AsPlainText -Force) -UseCompression $true -StorageClass OneZoneIA -StopIfPlanRunsFor 10:00
+    $CommonOptions = New-MBSNBFBackupPlanCommonOption -SyncRepositoryBeforeRun $true -UseServerSideEncryption $true -EncryptionAlgorithm AES256 -EncryptionPassword (ConvertTo-SecureString -string "My_Password" -AsPlainText -Force) -UseCompression $true -StorageClass OneZoneIA -StopIfPlanRunsFor 10:00
     
     Create backup plan common options object.
 
@@ -120,9 +135,13 @@ function New-MBSNBFBackupPlanCommonOption {
         [timespan]
         $StopIfPlanRunsFor='00:00',
         #
-        [Parameter(Mandatory=$False, HelpMessage='Run missed scheduled backup immediately when computer starts up. Possible values: $true/$false', ParameterSetName='Common')]
+        [Parameter(Mandatory=$False, HelpMessage='Run missed scheduled backup immediately when computer starts up. Possible values: $true/$false')]
         [boolean]
         $RunMissedPlanImmediately=$False,
+        #
+        [Parameter(Mandatory=$True, HelpMessage='Enables Forever Forward Incremental backup. Possible values: $true/$false', ParameterSetName='FFI')]
+        [boolean]
+        $ForeverForwardIncremental=$False,
         # ------------------ Pre / Post actions ----------------------------
         [Parameter(Mandatory=$False, HelpMessage="Specify command to be executed before backup completes.")]
         [string]
@@ -142,6 +161,18 @@ function New-MBSNBFBackupPlanCommonOption {
         [Nullable[boolean]]
         $PostActionRunAnyway,
         #
+        [Parameter(Mandatory=$False, HelpMessage="Specify chained plan ID. Use (Get-MBSBackupPlan | Where-Object Name -eq 'Backup plans name').ID or (Get-MBSRestorePlan | Where-Object Name -eq 'Backup plan name').ID")]
+        [string]
+        $BackupChainPlanID,
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Specify to execute the chained plan only if the current plan is completed successfully ($true) or always ($false)')]
+        [Nullable[boolean]]
+        $BackupChainExecuteOnlyAfterSuccess,
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Specify to force full backup for the chained plan. Possible values: $true/$false')]
+        [Nullable[boolean]]
+        $BackupChainExecuteForceFull,
+        #
         [Parameter(Mandatory=$False, HelpMessage="Specify to send backup plan result notification email when backup fails (errorOnly) or in all cases (on). Prior to turn on the notification settings must be configured. Possible values: errorOnly, on, off")]
         [MBS.Agent.Plan.Notification]
         $ResultEmailNotification = 'off',
@@ -151,29 +182,33 @@ function New-MBSNBFBackupPlanCommonOption {
         $AddEventToWindowsLog = 'off',
         # ---------------------------- Retention Policy -------------------------
         #
-        [Parameter(Mandatory=$False, HelpMessage="Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180. ")]
-        [Nullable[Timespan]]
+        [Parameter(Mandatory=$True, HelpMessage="Keep versions for specified number of days. Set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180", ParameterSetName='FFI')]
+        [Parameter(Mandatory=$False, HelpMessage="Keep versions for specified number of days. Set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180", ParameterSetName='GFS')]
+        [int]
         $KeepVersionPeriod,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Enables GFS weekly storage type. Example: -KeepVersionPeriod 4")]
+        [Parameter(Mandatory=$False, HelpMessage="Enables GFS weekly storage type. Example: -KeepVersionPeriod 4", ParameterSetName='GFS')]
         [ValidateRange(0,100000)]
         [int]
         $GFSKeepWeekly = 0,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Enables GFS monthly storage type. Example: -KeepVersionPeriod 12")]
+        [Parameter(Mandatory=$False, HelpMessage="Enables GFS monthly storage type. Example: -KeepVersionPeriod 12", ParameterSetName='GFS')]
         [ValidateRange(0,10000)]
         [int]
         $GFSKeepMonthly = 0,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Enables GFS yearly storage type. Example: -KeepVersionPeriod 5")]
+        [Parameter(Mandatory=$False, HelpMessage="Enables GFS yearly storage type. Example: -KeepVersionPeriod 5", ParameterSetName='GFS')]
         [ValidateRange(0,1000)]
         [int]
         $GFSKeepYearly = 0,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Specify the number of month for the first successful GFS full backup for yearly storage type. Example: -GFSMonthOfTheYear February ")]
+        [Parameter(Mandatory=$False, HelpMessage="Specify the number of month for the first successful GFS full backup for yearly storage type. Example: -GFSMonthOfTheYear February", ParameterSetName='GFS')]
         [MBS.Agent.Plan.Month]
-        $GFSMonthOfTheYear = "NotSet"
-
+        $GFSMonthOfTheYear = "NotSet",
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Enables Intelligent Retention for Forever Forward Incremental. Possible values: $true/$false. By default set to $true if Forever Forward Incremental is enabled', ParameterSetName='FFI')]
+        [boolean]
+        $IntelligentRetention=$True
     )
     
     begin {
@@ -191,10 +226,14 @@ function New-MBSNBFBackupPlanCommonOption {
         $BackupPlanOption.FullConsistencyCheck = $FullConsistencyCheck
         $BackupPlanOption.StopIfPlanRunsFor = $StopIfPlanRunsFor
         $BackupPlanOption.RunMissedPlanImmediately = $RunMissedPlanImmediately
+        $BackupPlanOption.ForeverForwardIncremental = $ForeverForwardIncremental
         $BackupPlanOption.PreActionCommand = $PreActionCommand
         $BackupPlanOption.PreActionContinueAnyway = $PreActionContinueAnyway
         $BackupPlanOption.PostActionCommand = $PostActionCommand
         $BackupPlanOption.PostActionRunAnyway = $PostActionRunAnyway
+        $BackupPlanOption.BackupChainPlanID = $BackupChainPlanID
+        $BackupPlanOption.BackupChainExecuteOnlyAfterSuccess = $BackupChainExecuteOnlyAfterSuccess
+        $BackupPlanOption.BackupChainExecuteForceFull = $BackupChainExecuteForceFull
         $BackupPlanOption.ResultEmailNotification = $ResultEmailNotification
         $BackupPlanOption.AddEventToWindowsLog = $AddEventToWindowsLog
         if($null -ne $KeepVersionPeriod){$BackupPlanOption.KeepVersionPeriod = $KeepVersionPeriod}
@@ -202,6 +241,7 @@ function New-MBSNBFBackupPlanCommonOption {
         if($null -ne $GFSKeepMonthly){$BackupPlanOption.GFSKeepMonthly = $GFSKeepMonthly}
         if($null -ne $GFSKeepYearly){$BackupPlanOption.GFSKeepYearly = $GFSKeepYearly}
         $BackupPlanOption.GFSMonthOfTheYear = $GFSMonthOfTheYear
+        $BackupPlanOption.IntelligentRetention = $IntelligentRetention
         return $BackupPlanOption
     }
     

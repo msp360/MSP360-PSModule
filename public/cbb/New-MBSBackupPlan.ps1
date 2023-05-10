@@ -242,6 +242,7 @@ function New-MBSBackupPlan {
         
         #---------------------------- Block Level ------------------
         [Parameter(Mandatory=$False, HelpMessage='Use block level backup.', ParameterSetName='FileLevel')]
+        [Parameter(Mandatory=$False, HelpMessage='Use block level backup.', ParameterSetName='ImageBased')]
         [Switch]
         $UseBlockLevelBackup,
 
@@ -497,8 +498,16 @@ function New-MBSBackupPlan {
                 $Argument += " -aid ""$($StorageAccount.ID)"""
             }
 
+            if ($useBlockLevelBackup) {$Argument += " -useBlockLevelBackup yes"}
+
             if($Schedule){$Argument += Set-Schedule -Schedule $Schedule}
-            if($FullSchedule){$Argument += Set-Schedule -Schedule $FullSchedule -Prefix "ForceFull"}
+            if($FullSchedule){
+                if ((($PSCmdlet.ParameterSetName -eq 'FileLevel') -Or ($PSCmdlet.ParameterSetName -eq 'ImageBased')) -And (-Not ($useBlockLevelBackup))) {
+                    Write-Warning "Full schedule options specified but ""useBlockLevelBackup"" parameter is not enabled. Enabling ""useBlockLevelBackup"" parameter..."
+                    $Argument += " -useBlockLevelBackup yes"
+                }
+                $Argument += Set-Schedule -Schedule $FullSchedule -Prefix "ForceFull"
+            }
             if($MSSQLDiffSchedule){$Argument += Set-Schedule -Schedule $MSSQLDiffSchedule -Prefix "Diff"}
             if($MSSQLTlogSchedule){$Argument += Set-Schedule -Schedule $MSSQLTlogSchedule -Prefix "TLog"}
             
@@ -544,11 +553,33 @@ function New-MBSBackupPlan {
                     $Argument += " -paa no"
                 }
             }
+            if ($BackupPlanCommonOption.BackupChainPlanID) {
+                if ($CBBVersion -ge [version]"7.2.1.0") {
+                    $Argument += " -chainPlanOn $($BackupPlanCommonOption.BackupChainPlanID)"
+                    if ($null -ne $BackupPlanCommonOption.BackupChainExecuteOnlyAfterSuccess) {
+                        if ($BackupPlanCommonOption.BackupChainExecuteOnlyAfterSuccess) {
+                            $Argument += " -chainPlanAfterSuccess yes"
+                        }else{
+                            $Argument += " -chainPlanAfterSuccess no"
+                        }
+                    }
+                    if ($null -ne $BackupPlanCommonOption.BackupChainExecuteForceFull) {
+                        if ($BackupPlanCommonOption.BackupChainExecuteForceFull) {
+                            $Argument += " -chainPlanForceFull yes"
+                        }else{
+                            $Argument += " -chainPlanForceFull no"
+                        }
+                    }
+                }else{
+                    Write-Warning "Backup agent version is $CBBVersion. Backup chain parameters require version 7.2.1 or higher. Ignoring backup chain options"
+                }
+            }
+
             if($Null -ne $BackupPlanCommonOption.ResultEmailNotification){$Argument += " -notification $($BackupPlanCommonOption.ResultEmailNotification)"}
             if($Null -ne $BackupPlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($BackupPlanCommonOption.AddEventToWindowsLog)"}
             if($Null -ne $BackupPlanCommonOption.KeepVersionPeriod){
-                if($BackupPlanCommonOption.KeepVersionPeriod.TotalDays -gt 0){
-                    $Argument += " -purge $([Math]::Round($BackupPlanCommonOption.KeepVersionPeriod.TotalDays))d"
+                if($BackupPlanCommonOption.KeepVersionPeriod -gt 0){
+                    $Argument += " -purge $($BackupPlanCommonOption.KeepVersionPeriod)d"
                 }else{
                     $Argument += " -purge no"
                 }
@@ -560,10 +591,16 @@ function New-MBSBackupPlan {
                     $Argument += " -keep all"
                 }
             }
-            if($BackupPlanCommonOption.KeepLastVersion){$Argument += " -keepLastVersion yes"}
+            if($Null -ne $BackupPlanCommonOption.KeepLastVersion){
+                if ($BackupPlanCommonOption.KeepLastVersion){
+                    $Argument += " -keepLastVersion yes"
+                }else{
+                    $Argument += " -keepLastVersion no"
+                }
+            }
             if($Null -ne $BackupPlanCommonOption.DelayPurgePeriod){
-                if($BackupPlanCommonOption.DelayPurgePeriod.TotalDays -gt 0){
-                    $Argument += " -delayPurge $([Math]::Round($BackupPlanCommonOption.DelayPurgePeriod.TotalDays))d"
+                if($BackupPlanCommonOption.DelayPurgePeriod -gt 0){
+                    $Argument += " -delayPurge $($BackupPlanCommonOption.DelayPurgePeriod)d"
                 }else{
                     $Argument += " -delayPurge no"
                 }
@@ -573,7 +610,6 @@ function New-MBSBackupPlan {
                 'FileLevel' {
                 # --------- File-Level ------------
                     #$Argument += " addBackupPlan"
-                    if ($useBlockLevelBackup) {$Argument += " -useBlockLevelBackup yes"}
                     if ($UseFastNTFSScan) {
                         if ($CBBVersion -ge [version]"7.1.0.0") {
                             $Argument += " -fastNtfs yes"

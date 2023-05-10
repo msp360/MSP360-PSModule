@@ -44,7 +44,16 @@ function New-MBSBackupPlanCommonOption {
     
     .PARAMETER PostActionRunAnyway
     Specify to execute post-backup action in any case (regardless the backup result).
-    
+
+    .PARAMETER BackupChainPlanID
+    Specify chained plan ID. Use (Get-MBSBackupPlan | Where-Object Name -eq 'Backup plans name').ID or (Get-MBSRestorePlan | Where-Object Name -eq 'Backup plan name').ID
+
+    .PARAMETER BackupChainExecuteOnlyAfterSuccess
+    Specify to execute the chained plan only if the current plan is completed successfully ($true) or always ($false)
+
+    .PARAMETER BackupChainExecuteForceFull
+    Specify to force full backup for the chained plan
+
     .PARAMETER ResultEmailNotification
     Specify to send backup plan result notification email when backup fails (errorOnly) or in all cases (on). Prior to turn on the notification settings must be configured.
     
@@ -52,7 +61,7 @@ function New-MBSBackupPlanCommonOption {
     Specify to add entry to Windows Event Log when backup fails (errorOnly) or in all cases (on).
     
     .PARAMETER KeepVersionPeriod
-    Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180. .
+    Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180
     
     .PARAMETER KeepNumberOfVersion
     Keep limited number of versions. Possible values: 0 to keep all version or specific number of versions
@@ -61,7 +70,7 @@ function New-MBSBackupPlanCommonOption {
     Always keep the last version.
     
     .PARAMETER DelayPurgePeriod
-    Specify purge delay. Omit to use defult retention policy, set 0 to purge version withour delay or specify number of days. Example: -DelayPurgePeriod 180. .
+    Specify purge delay. Omit to use defult retention policy, set 0 to purge version withour delay or specify number of days. Example: -DelayPurgePeriod 180
     
     .EXAMPLE
     $CommonOptions = New-MBSBackupPlanCommonOption -SyncRepositoryBeforeRun $true -UseServerSideEncryption $true -EncryptionAlgorithm AES256 -EncryptionPassword (ConvertTo-SecureString -string "My_Password" -AsPlainText -Force) -UseCompression $true -StorageClass OneZoneIA -SaveBackupPlanConfiguration $true -StopIfPlanRunsFor 10:00
@@ -139,6 +148,18 @@ function New-MBSBackupPlanCommonOption {
         [Nullable[boolean]]
         $PostActionRunAnyway,
         #
+        [Parameter(Mandatory=$False, HelpMessage="Specify chained plan ID. Use (Get-MBSBackupPlan | Where-Object Name -eq 'Backup plans name').ID or (Get-MBSRestorePlan | Where-Object Name -eq 'Backup plan name').ID")]
+        [string]
+        $BackupChainPlanID,
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Specify to execute the chained plan only if the current plan is completed successfully ($true) or always ($false)')]
+        [Nullable[boolean]]
+        $BackupChainExecuteOnlyAfterSuccess,
+        #
+        [Parameter(Mandatory=$False, HelpMessage='Specify to force full backup for the chained plan. Possible values: $true/$false')]
+        [Nullable[boolean]]
+        $BackupChainExecuteForceFull,
+        #
         [Parameter(Mandatory=$False, HelpMessage="Specify to send backup plan result notification email when backup fails (errorOnly) or in all cases (on). Prior to turn on the notification settings must be configured. Possible values: errorOnly, on, off")]
         [MBS.Agent.Plan.Notification]
         $ResultEmailNotification = 'off',
@@ -148,8 +169,8 @@ function New-MBSBackupPlanCommonOption {
         $AddEventToWindowsLog = 'off',
         # ---------------------------- Retention Policy -------------------------
         #
-        [Parameter(Mandatory=$False, HelpMessage="Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180. ")]
-        [Nullable[Timespan]]
+        [Parameter(Mandatory=$False, HelpMessage="Keep versions for specified number of days. Omit to use defult retention policy, set 0 to keep all versions or specify number of days. Example: -KeepVersionPeriod 180")]
+        [Nullable[int]]
         $KeepVersionPeriod,
         #
         [Parameter(Mandatory=$False, HelpMessage="Keep limited number of versions. Possible values: 0 to keep all version or specific number of versions")]
@@ -160,8 +181,8 @@ function New-MBSBackupPlanCommonOption {
         [boolean]
         $KeepLastVersion=$true,
         #
-        [Parameter(Mandatory=$False, HelpMessage="Specify purge delay. Omit to use defult retention policy, set 0 to purge version withour delay or specify number of days. Example: -DelayPurgePeriod 180. ")]
-        [Nullable[timespan]]
+        [Parameter(Mandatory=$False, HelpMessage="Specify purge delay. Omit to use defult retention policy, set 0 to purge version withour delay or specify number of days. Example: -DelayPurgePeriod 180")]
+        [Nullable[int]]
         $DelayPurgePeriod
     )
     
@@ -185,6 +206,9 @@ function New-MBSBackupPlanCommonOption {
         $BackupPlanOption.PreActionContinueAnyway = $PreActionContinueAnyway
         $BackupPlanOption.PostActionCommand = $PostActionCommand
         $BackupPlanOption.PostActionRunAnyway = $PostActionRunAnyway
+        $BackupPlanOption.BackupChainPlanID = $BackupChainPlanID
+        $BackupPlanOption.BackupChainExecuteOnlyAfterSuccess = $BackupChainExecuteOnlyAfterSuccess
+        $BackupPlanOption.BackupChainExecuteForceFull = $BackupChainExecuteForceFull
         $BackupPlanOption.ResultEmailNotification = $ResultEmailNotification
         $BackupPlanOption.AddEventToWindowsLog = $AddEventToWindowsLog
         if($null -ne $KeepVersionPeriod){$BackupPlanOption.KeepVersionPeriod = $KeepVersionPeriod}

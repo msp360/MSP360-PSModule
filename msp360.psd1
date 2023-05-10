@@ -6,7 +6,7 @@
 
     CompanyName = 'MSP360'
 
-    ModuleVersion = '2.53.0'
+    ModuleVersion = '3.19.0'
 
     # Use the New-Guid command to generate a GUID, and copy/paste into the next line
     GUID = '69079da4-a0de-426d-bece-ae139c8b5f1a'
@@ -48,21 +48,25 @@
 
             # What new features, bug fixes, or deprecated features, are part of this release?
             ReleaseNotes = @"
+- New cmdlets:
+    - Edit-MBSNBFBackupPlan (https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/edit-mbsnbfbackupplan)
+    - Convert-MBSBackupPlanToNBF (https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/convert-mbsbackupplantonbf)
 - Bugfix:
-    - Get-MBSBackupPlan: NBF plans - incorrect frequency is set if 'DayOfWeek' includes all days and the initial frequency is not 'Weekly'
-    - Get-MBSBackupPlan: NBF plans - 'DayOfWeek' for monthly incremental schedule is not set
-    - Get-MBSBackupPlan: NBF plans - 'DayOfMonth' value is not set if frequency is 'DayOfMonth'
-    - Get-MBSBackupPlan: NBF plans - 'RepeatInterval' and 'RepeatStartDate' are not set
+    - New-MBSNBFFileBackupPlan: -KeepVersionPeriod parameter does not work if backup agent version is from 7.8.0 to 7.8.2
+    - New-MBSBackupPlan: schedule set incorrectly when incremental and full schedules are specified
+    - Edit-MBSBackupPlan: all backup chain parameters should be specified even if only one parameter change is needed
+    - Edit-MBSBackupPlan: backup chain is disabled if next backup plan ID in chain not specified in command for backup agent version 7.2.1 and higher
 - Enhancement:
-    - Get-MBSBackupPlan: RAW output type now returns NBF backup plans in their source (not converted) format in the same form as CBF backup plans
-    - Edit-MBSBackupPlan: adding and disabling file/folder exclusions for Image-Based backup plans improvements (MBS Backup Agent release 7.8.2)
-    - Stop-MBSPlan: force stop improvements (MBS Backup Agent release 7.8.2)
-    - Get-MBSAgentSetting, Get-MBSStorageAccount: added checks for cases when 'enginesettings.list' is empty, corrupt or incorrect format
-    - Get-MBSAPIBuild: added RMM build type
-    - Get-MBSAPIBuild: renamed build type values for convenience. Possible values - 'Windows','VMEdition','LinuxDEB','LinuxRPM','macOS','RMM'
-    - Request-MBSAPIBuild: introduced enums for -BuildType and -BuildEditions parameters
-    - Remove-MBSAgent, Remove-CONAgent, Remove-RMMAgent: output message improvements
-    - Set-MSP360ModuleSettings: added -SkipEngineSettingsListCheck parameter for cases when some cmdlets do not work properly if 'enginesettings.list' is not present (e.g. after MBS Backup Agent clean install, before assigning a backup user)
+    - New-MBSNBFBackupPlanCommonOption, Get-MBSBackupPlan: added support for -ForeverForwardIncremental and -IntelligentRetention parameters
+    - New-MBSNBFBackupPlanCommonOption: changed value type of parameter -KeepVersionPeriod from Timespan to Integer
+    - New-MBSBackupPlanCommonOption: changed value type of parameters -KeepVersionPeriod and -DelayPurgePeriod from Timespan to Integer
+    - New-MBSBackupPlanCommonOption, New-MBSNBFBackupPlanCommonOption: added backup chain parameters
+    - New-MBSNBFFileBackupPlan: added -KeepEFSEncryption parameter to back up EFS files as encrypted (MBS Backup Agent release 7.6.0)
+    - Edit-MBSBackupPlan: changed names for backup chain parameters (check help: https://mspbackups.com/AP/Help/powershell/cmdlets/backup-agent/edit-mbsbackupplan)
+    - Edit-MBSBackupPlan: added -SyntheticFull parameter for Image-Based backup plans
+    - Edit-MBSBackupPlan: added GlacierInstantRetrieval AWS S3 storage class support
+    - Edit-MBSBackupPlan: code optimization and minor bugfixes
+    - Updated help for Edit-MBSBackupPlan
 "@
         }
     }

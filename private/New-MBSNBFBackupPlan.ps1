@@ -156,21 +156,62 @@ function New-MBSNBFBackupPlan {
                     $Argument += " -paa no"
                 }
             }
-            if($Null -ne $Object.BackupPlanCommonOption.ResultEmailNotification){$Argument += " -notification $($Object.BackupPlanCommonOption.ResultEmailNotification)"}
-            if($Null -ne $Object.BackupPlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($Object.BackupPlanCommonOption.AddEventToWindowsLog)"}
-            if($Null -ne $Object.BackupPlanCommonOption.KeepVersionPeriod){
-                if($Object.BackupPlanCommonOption.KeepVersionPeriod.TotalDays -gt 0){
-                    $Argument += " -purge $([Math]::Round($Object.BackupPlanCommonOption.KeepVersionPeriod.TotalDays))d"
+            if ($Object.BackupPlanCommonOption.BackupChainPlanID) {
+                if ($CBBVersion -ge [version]"7.2.1.0") {
+                    $Argument += " -chainPlanOn $($Object.BackupPlanCommonOption.BackupChainPlanID)"
+                    if ($null -ne $Object.BackupPlanCommonOption.BackupChainExecuteOnlyAfterSuccess) {
+                        if ($Object.BackupPlanCommonOption.BackupChainExecuteOnlyAfterSuccess) {
+                            $Argument += " -chainPlanAfterSuccess yes"
+                        }else{
+                            $Argument += " -chainPlanAfterSuccess no"
+                        }
+                    }
+                    if ($null -ne $Object.BackupPlanCommonOption.BackupChainExecuteForceFull) {
+                        if ($Object.BackupPlanCommonOption.BackupChainExecuteForceFull) {
+                            $Argument += " -chainPlanForceFull yes"
+                        }else{
+                            $Argument += " -chainPlanForceFull no"
+                        }
+                    }
                 }else{
-                    $Argument += " -purge no"
+                    Write-Warning "Backup agent version is $CBBVersion. Backup chain parameters require version 7.2.1 or higher. Ignoring backup chain options"
                 }
             }
 
+            if($Null -ne $Object.BackupPlanCommonOption.ResultEmailNotification){$Argument += " -notification $($Object.BackupPlanCommonOption.ResultEmailNotification)"}
+            if($Null -ne $Object.BackupPlanCommonOption.AddEventToWindowsLog){$Argument += " -winLog $($Object.BackupPlanCommonOption.AddEventToWindowsLog)"}
+            
+            if($Object.BackupPlanCommonOption.KeepVersionPeriod -gt 0){
+                $Argument += " -purge $($Object.BackupPlanCommonOption.KeepVersionPeriod)d"
+            }else{
+                if (-Not ($Object.BackupPlanCommonOption.ForeverForwardIncremental)) {
+                    $Argument += " -purge no"
+                } else {
+                    Write-Warning """KeepVersionPeriod"" parameter is set to 0 while enabling Forever Forward Incremental. Setting ""KeepVersionPeriod"" value to 30 days (default)"
+                    $Argument += " -purge 30d"
+                }
+            }
             if($Object.BackupPlanCommonOption.GFSKeepWeekly -gt 0){$Argument += " -gfsW $($Object.BackupPlanCommonOption.GFSKeepWeekly)"}
             if($Object.BackupPlanCommonOption.GFSKeepMonthly -gt 0){$Argument += " -gfsM $($Object.BackupPlanCommonOption.GFSKeepMonthly)"}
             if($Object.BackupPlanCommonOption.GFSKeepYearly -gt 0){$Argument += " -gfsY $($Object.BackupPlanCommonOption.GFSKeepYearly)"}
             if($Object.BackupPlanCommonOption.GFSMonthOfTheYear -gt 0){$Argument += " -gfsYMonth $($Object.BackupPlanCommonOption.GFSMonthOfTheYear)"}
 
+            if($Object.BackupPlanCommonOption.ForeverForwardIncremental){
+                if ($CBBVersion -ge [version]"7.8.0"){
+                    if ($Object.Schedule){
+                        $Argument += " -ffi yes"
+                        if($Object.BackupPlanCommonOption.IntelligentRetention){
+                            $Argument += " -ir yes"
+                        }else{
+                            $Argument += " -ir no"
+                        }
+                    }else{
+                        Write-Warning "Schedule settings not specified while enabling Forever Forward Incremental. Ignoring ForeverForwardIncremental option"
+                    }
+                }else{
+                    Write-Warning "Backup agent version is $CBBVersion. ""ForeverForwardIncremental"" parameter requires version 7.8.0 or higher. Ignoring ForeverForwardIncremental option"
+                }
+            }
 
             switch ($PSCmdlet.ParameterSetName){
                 'FileLevel' {
@@ -181,6 +222,13 @@ function New-MBSNBFBackupPlan {
                         if ($Object.ForceUsingVSS) {$Argument += " -vss yes"}else{$Argument += " -vss no"}
                     } else {
                         Write-Warning "MSP360ModuleSettings.SkipVSS is set. Ignoring ForceUsingVSS option"
+                    }
+                    if ($Object.KeepEFSEncryption) {
+                        if ($CBBVersion -ge [version]"7.6.0.70") {
+                            $Argument += " -keepEfsEncryption yes"
+                        }else{
+                            Write-Warning "Backup agent version is $CBBVersion. ""KeepEFSEncryption"" parameter requires version 7.6.0 or higher. Ignoring KeepEFSEncryption option"
+                        }
                     }
                     if ($Object.UseShareReadWriteModeOnError) {$Argument += " -sharerw yes"}
                     if ($Object.BackupEmptyFolders) {$Argument += " -bef yes"}
@@ -324,8 +372,23 @@ function New-MBSNBFBackupPlan {
         
 
         $BPID = (Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $Arguments -Output json -MasterPassword $MasterPassword -ErrorAction Stop).ID
+        if (($Null -ne $NBFFileLevelBackupPlan.BackupPlanCommonOption.KeepVersionPeriod) -And (($CBBVersion -ge [version]"7.8.0") -And ($CBBVersion -lt [version]"7.8.3"))) {
+            $ArgumentKeepVersionPeriod = " editBackupPlan -id $BPID"
+            if($NBFFileLevelBackupPlan.BackupPlanCommonOption.KeepVersionPeriod -gt 0){
+                $ArgumentKeepVersionPeriod += " -purge $($NBFFileLevelBackupPlan.BackupPlanCommonOption.KeepVersionPeriod)d"
+            }else{
+                if (-Not ($NBFFileLevelBackupPlan.BackupPlanCommonOption.ForeverForwardIncremental)) {
+                    $ArgumentKeepVersionPeriod += " -purge no"
+                } else {
+                    $ArgumentKeepVersionPeriod = ""
+                }
+            }
+            if ($ArgumentKeepVersionPeriod) {
+                Start-MBSProcess -CMDPath $CBB.CBBCLIPath -CMDArguments $ArgumentKeepVersionPeriod -Output json -MasterPassword $MasterPassword -ErrorAction Stop
+            }
+        }
         if ($NBFFileLevelBackupPlan.ExcludeItem -and ($CBBVersion -lt [version]"7.5.0")) {
-            $ArgumentsExcludeItem = " editBackupPlan -nbf -id $BPID"
+            $ArgumentsExcludeItem = " editBackupPlan -id $BPID"
             $NBFFileLevelBackupPlan.ExcludeItem | ForEach-Object -Process {
                 if (Test-Path -Path $_ -PathType Container) {
                     $ArgumentsExcludeItem += " -rd ""$_"""

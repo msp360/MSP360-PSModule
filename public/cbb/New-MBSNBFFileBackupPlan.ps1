@@ -127,6 +127,10 @@ function New-MBSNBFFileBackupPlan {
         [Switch]
         $ForceUsingVSS,
         #
+        [Parameter(Mandatory=$False, HelpMessage='Back up EFS files as encrypted.', ParameterSetName='FileLevel')]
+        [Switch]
+        $KeepEFSEncryption,
+        #
         [Parameter(Mandatory=$False, HelpMessage='Use share read/write mode on errors. Can help if file is open in share read/write mode.', ParameterSetName='FileLevel')]
         [Switch]
         $UseShareReadWriteModeOnError,
@@ -175,7 +179,7 @@ function New-MBSNBFFileBackupPlan {
         [System.Collections.Generic.List[string]]
         $ExcludeItem,
         #
-        [Parameter(Mandatory=$False, HelpMessage='Specify to generate detailed report.', ParameterSetName='FileLevel')]
+        [Parameter(Mandatory=$False, HelpMessage='Specify to generate detailed report', ParameterSetName='FileLevel')]
         [Switch]
         $GenerateDetailedReport
     )
@@ -212,6 +216,7 @@ function New-MBSNBFFileBackupPlan {
             BackupNTFSPermissions = $BackupNTFSPermissions
             FastNTFSScan = $FastNTFSScan
             ForceUsingVSS = $ForceUsingVSS
+            KeepEFSEncryption = $KeepEFSEncryption
             UseShareReadWriteModeOnError = $UseShareReadWriteModeOnError
             BackupEmptyFolders = $BackupEmptyFolders
             BackupOnlyAfter = $BackupOnlyAfter
