@@ -636,9 +636,9 @@ function New-MBSBackupPlan {
                     }else{
                         $Argument += " -es no"
                     }
-                    if ($SkipFolder){$Argument += " -skipf ""$($SkipFolder -join ',')"""}
-                    if ($IncludeFilesMask){$Argument += " -ifm $($IncludeFilesMask -join ',')"}
-                    if ($ExcludeFilesMask){$Argument += " -efm $($ExcludeFilesMask -join ',')"}
+                    if ($SkipFolder){$Argument += " -skipf ""$($SkipFolder -join ';' -replace ',',';')"""}
+                    if ($IncludeFilesMask){$Argument += " -ifm $($IncludeFilesMask -join ';' -replace ',',';')"}
+                    if ($ExcludeFilesMask){$Argument += " -efm $($ExcludeFilesMask -join ';' -replace ',',';')"}
                     if ($IgnoreErrorPathNotFound) {$Argument += " -iepnf yes"}
                     if ($TrackDeletedFiles) {$Argument += " -trackdeleted yes"}
                     if ($BackupFile){$Argument += " -f "+'"{0}"' -f ($BackupFile -join '" -f "')}

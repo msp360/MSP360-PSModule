@@ -194,7 +194,7 @@ function New-MBSNBFBackupPlan {
             if($Object.BackupPlanCommonOption.GFSKeepWeekly -gt 0){$Argument += " -gfsW $($Object.BackupPlanCommonOption.GFSKeepWeekly)"}
             if($Object.BackupPlanCommonOption.GFSKeepMonthly -gt 0){$Argument += " -gfsM $($Object.BackupPlanCommonOption.GFSKeepMonthly)"}
             if($Object.BackupPlanCommonOption.GFSKeepYearly -gt 0){$Argument += " -gfsY $($Object.BackupPlanCommonOption.GFSKeepYearly)"}
-            if($Object.BackupPlanCommonOption.GFSMonthOfTheYear -gt 0){$Argument += " -gfsYMonth $($Object.BackupPlanCommonOption.GFSMonthOfTheYear)"}
+            if($Object.BackupPlanCommonOption.GFSMonthOfTheYear -gt 0){$Argument += " -gfsYMonth $(($Object.BackupPlanCommonOption.GFSMonthOfTheYear).value__)"}
 
             if($Object.BackupPlanCommonOption.ForeverForwardIncremental){
                 if ($CBBVersion -ge [version]"7.8.0"){
@@ -238,9 +238,9 @@ function New-MBSNBFBackupPlan {
                     }else{
                         $Argument += " -es no"
                     }
-                    if ($Object.SkipFolders){$Argument += " -skipf $($Object.SkipFolders -join ',')"}
-                    if ($Object.IncludeFilesMask){$Argument += " -ifm $($Object.IncludeFilesMask -join ',')"}
-                    if ($Object.ExcludeFilesMask){$Argument += " -efm $($Object.ExcludeFilesMask -join ',')"}
+                    if ($Object.SkipFolder){$Argument += " -skipf $($Object.SkipFolder -join ';' -replace ',',';')"}
+                    if ($Object.IncludeFilesMask){$Argument += " -ifm $($Object.IncludeFilesMask -join ';' -replace ',',';')"}
+                    if ($Object.ExcludeFilesMask){$Argument += " -efm $($Object.ExcludeFilesMask -join ';' -replace ',',';')"}
                     if ($Object.IgnoreErrorPathNotFound) {$Argument += " -iepnf yes"}
                     if ($Object.BackupItem){
                         $Object.BackupItem | ForEach-Object -Process {

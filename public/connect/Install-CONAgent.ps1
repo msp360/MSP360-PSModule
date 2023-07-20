@@ -54,19 +54,21 @@ function Install-CONAgent {
                 $Arguments = "/S /t=$ConfigurationID"
             }
             'ByURL' {
-                $ID = $URL.Substring($URL.LastIndexOf("/")+1)
-                $FileName = "ConnectSetup_t$ID.exe"
+                #$ID = $URL.Substring($URL.LastIndexOf("/")+1)
+                #$FileName = "ConnectSetup_t$ID.exe"
+                $FileName = Get-FileNameFromURL -URL $URL -ParseFromURLifError
                 $Arguments = "/S"
             }
         }
-        
-        if (($Force) -Or (-Not(Get-CONAgent -ErrorAction SilentlyContinue))) {
-            $Folder = New-Item -Path "$TempPath" -Name "$TempFolder" -ItemType "directory" -ErrorAction SilentlyContinue
-            (New-Object Net.WebClient).DownloadFile("$URL", "$TempPath\$TempFolder\$FileName")
-            (Start-MBSProcess -CMDPath "$TempPath\$TempFolder\$FileName" -CMDArguments "$Arguments").stdout
-            Remove-Item -Path "$TempPath\$TempFolder" -Force -Recurse
-        }else{
-            return "The Connect agent is already installed."
+        if ($FileName) {
+            if (($Force) -Or (-Not(Get-CONAgent -ErrorAction SilentlyContinue))) {
+                $Folder = New-Item -Path "$TempPath" -Name "$TempFolder" -ItemType "directory" -ErrorAction SilentlyContinue
+                (New-Object Net.WebClient).DownloadFile("$URL", "$TempPath\$TempFolder\$FileName")
+                (Start-MBSProcess -CMDPath "$TempPath\$TempFolder\$FileName" -CMDArguments "$Arguments").stdout
+                Remove-Item -Path "$TempPath\$TempFolder" -Force -Recurse
+            }else{
+                return "The Connect agent is already installed."
+            }
         }
     }
     

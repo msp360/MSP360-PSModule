@@ -721,7 +721,7 @@ function Edit-MBSNBFBackupPlan {
             }
         }
 
-        if ((($null -ne $ForeverForwardIncremental) -Or ($null -ne $IntelligentRetention)) -And (($null -ne $GFSKeepWeekly) -Or ($null -ne $GFSKeepMonthly) -Or ($null -ne $GFSKeepYearly) -Or ($null -ne $GFSMonthOfTheYear))) {
+        if ((($ForeverForwardIncremental -eq $True) -Or ($IntelligentRetention -eq $True)) -And (($GFSKeepWeekly -gt 0) -Or ($GFSKeepMonthly -gt 0) -Or ($GFSKeepYearly -gt 0) -Or ($($GFSMonthOfTheYear.value__) -gt 0))) {
             Write-Error "Forever Forward Incremental and GFS settings cannot be used at the same time"
             Break
         }
@@ -791,14 +791,28 @@ function Edit-MBSNBFBackupPlan {
                             Write-Warning "Forever Forward Incremental cannot be enabled for file system storage destinations. Ignoring ForeverForwardIncremental option"
                         } else {
                             if ($RecurringType -And $At) {
+                                $ForeverForwardIncrementalIsSet = $False
                                 if ($Null -ne $KeepVersionPeriod) {
                                     $Argument += " -ffi yes"
+                                    $ForeverForwardIncrementalIsSet = $True
                                 } elseif ($BackupPlan.SerializationSupportRetentionTime -ne "10675199.02:48:05.4775807") {
                                     $KeepVersionPeriodFromPlan = ([timespan]$BackupPlan.SerializationSupportRetentionTime).TotalDays
-                                    Write-Warning """KeepKeepVersionPeriod"" parameter not specified while enabling Forever Forward Incremental. Existing renetion policy setting (keep backup for $KeepVersionPeriodFromPlan days) will be used"
+                                    if ($KeepVersionPeriodFromPlan -eq 0) {
+                                        $KeepVersionPeriodFromPlan = 30
+                                        Write-Warning """KeepKeepVersionPeriod"" parameter not specified and existing retention policy is set to disabled while enabling Forever Forward Incremental. Retention setting to keep $KeepVersionPeriodFromPlan days will be used"
+                                    } else {
+                                        Write-Warning """KeepKeepVersionPeriod"" parameter not specified while enabling Forever Forward Incremental. Existing renetion policy setting (keep backup for $KeepVersionPeriodFromPlan days) will be used"
+                                    }
                                     $Argument += " -ffi yes -purge $($KeepVersionPeriodFromPlan)d"
+                                    $ForeverForwardIncrementalIsSet = $True
                                 } else {
                                     Write-Warning """KeepKeepVersionPeriod"" parameter not specified and no retention policy specified in the current plan while enabling Forever Forward Incremental. Ignoring ForeverForwardIncremental option"
+                                }
+                                if (($ForeverForwardIncrementalIsSet) -And ($BackupPlan.GFSPolicySettings.IsEnabled)) {
+                                    Write-Warning "GFS settings are enabled in the current plan while enabling Forever Forward Incremental. Disabling GFS settings"
+                                    if (($GFSKeepWeekly -ne 0) -And ($BackupPlan.GFSPolicySettings.Weekly.IsEnabled)) {$Argument += " -gfsWDisable"}
+                                    if (($GFSKeepMonthly -ne 0) -And ($BackupPlan.GFSPolicySettings.Monthly.IsEnabled)) {$Argument += " -gfsMDisable"}
+                                    if (($GFSKeepYearly -ne 0) -And ($BackupPlan.GFSPolicySettings.Yearly.IsEnabled)) {$Argument += " -gfsYDisable"}
                                 }
                             } else {
                                 Write-Warning "Schedule settings not specified while enabling Forever Forward Incremental. Ignoring ForeverForwardIncremental option"
@@ -806,10 +820,10 @@ function Edit-MBSNBFBackupPlan {
                         }
                     } else {
                         $Argument += " -ffi no"
-                        if ($BackupPlan.Schedule.Enabled) {
+                        if (($BackupPlan.Schedule.Enabled) -And (-Not ($RecurringType -And $At))) {
                             Write-Warning "The schedule settings will be set to ""No schedule"" while disabling Forever Forward Incremental"
                         }
-                        if ($BackupPlan.ForceFullSchedule.Enabled) {
+                        if (($BackupPlan.ForceFullSchedule.Enabled) -And (-Not ($RecurringTypeForceFull))) {
                             if (-Not ($DisableForceFullSchedule)){$Argument += " -sdForce"}
                         }
                     }
@@ -841,6 +855,22 @@ function Edit-MBSNBFBackupPlan {
                     $Argument += " -purge no"
                 }
             }
+
+            if ((($GFSKeepWeekly -gt 0) -Or ($GFSKeepMonthly -gt 0) -Or ($GFSKeepYearly -gt 0) -Or ($($GFSMonthOfTheYear.value__) -gt 0)) -And ($ForeverForwardIncremental -ne $false) -And ($BackupPlan.ForwardIncremental)){
+                Write-Warning "Forever Forward Incremental settings are enabled in the current plan while enabling GFS. Disabling Forever Forward Incremental option"
+                $Argument += " -ffi no"
+                if (($BackupPlan.Schedule.Enabled) -And (-Not ($RecurringType -And $At))) {
+                    Write-Warning "The schedule settings will be set to ""No schedule"" while disabling Forever Forward Incremental"
+                }
+                if (($BackupPlan.ForceFullSchedule.Enabled) -And (-Not ($RecurringTypeForceFull))) {
+                    if (-Not ($DisableForceFullSchedule)){$Argument += " -sdForce"}
+                }
+                if (($BackupPlan.SerializationSupportRetentionTime -ne "10675199.02:48:05.4775807") -And ($null -eq $KeepVersionPeriod)) {
+                    $KeepVersionPeriodFromPlan = ([timespan]$BackupPlan.SerializationSupportRetentionTime).TotalDays
+                    Write-Warning """KeepKeepVersionPeriod"" parameter not specified while switching from Forever Forward Incremental to GFS. Existing renetion policy setting (keep backup for $KeepVersionPeriodFromPlan days) will be used"
+                    $Argument += " -purge $($KeepVersionPeriodFromPlan)d"
+                }
+            }
             
             if($Null -ne $GFSKeepWeekly){
                 if($GFSKeepWeekly -gt 0){
@@ -863,7 +893,7 @@ function Edit-MBSNBFBackupPlan {
                     $Argument += " -gfsYDisable"
                 }
             }
-            if($GFSMonthOfTheYear -gt 0){$Argument += " -gfsYMonth $($GFSMonthOfTheYear)"}
+            if($GFSMonthOfTheYear -gt 0){$Argument += " -gfsYMonth $($GFSMonthOfTheYear.value__)"}
 
             #
             if ($RecurringType){
@@ -1118,9 +1148,9 @@ function Edit-MBSNBFBackupPlan {
                     $Argument += " -es no"
                 }
             }
-            if ($SkipFolders){$Argument += " -skipf "+'"{0}"' -f ($SkipFolders -join ';')}
-            if ($IncludeFilesMask){$Argument += " -ifm "+'"{0}"' -f ($IncludeFilesMask -join ';')}
-            if ($ExcludeFilesMask){$Argument += " -efm "+'"{0}"' -f ($ExcludeFilesMask -join ';')}
+            if ($SkipFolders){$Argument += " -skipf "+'"{0}"' -f ($SkipFolders -join ';' -replace ',',';')}
+            if ($IncludeFilesMask){$Argument += " -ifm "+'"{0}"' -f ($IncludeFilesMask -join ';' -replace ',',';')}
+            if ($ExcludeFilesMask){$Argument += " -efm "+'"{0}"' -f ($ExcludeFilesMask -join ';' -replace ',',';')}
             if ($null -ne $IgnoreErrorPathNotFound){
                 if ($IgnoreErrorPathNotFound) {
                     $Argument += " -iepnf yes"
